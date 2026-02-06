@@ -10,8 +10,11 @@ function renderClientProfilePage(clientId) {
         return renderNotFoundPage('Client not found');
     }
 
-    // Get AI analysis
-    const analysis = ChurnAnalyzer ? ChurnAnalyzer.analyze(client) : { healthScore: client.healthScore, churnRisk: client.churnRisk, riskFactors: [] };
+    // Get advanced AI analysis with ML predictions
+    const analysis = AdvancedChurnCalculator ?
+        AdvancedChurnCalculator.analyze(client) :
+        (ChurnAnalyzer ? ChurnAnalyzer.analyze(client) : { healthScore: client.healthScore, churnRisk: client.churnRisk, riskFactors: [] });
+
     const healthClass = getHealthScoreClass(analysis.healthScore);
     const churnClass = getChurnRiskClass(analysis.churnRisk);
 
@@ -113,27 +116,39 @@ function renderClientProfilePage(clientId) {
                             </div>
                         </div>
                         
-                        <!-- Stats Row -->
+                        <!-- Stats Row - Enhanced with Advanced Metrics -->
                         <div class="profile-stats">
-                            <div class="profile-stat highlight">
-                                <div class="profile-stat-value">${analysis.healthScore}</div>
+                            <!-- Health Score with Gauge -->
+                            <div class="profile-stat highlight" title="Sub-metrics: Engagement ${analysis.healthMetrics?.engagement || analysis.healthScore}, Loyalty ${analysis.healthMetrics?.loyalty || analysis.healthScore}, Satisfaction ${analysis.healthMetrics?.satisfaction || analysis.healthScore}">
+                                <div class="health-gauge">
+                                    <svg viewBox="0 0 36 36" class="health-gauge-svg">
+                                        <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <path class="gauge-fill ${healthClass}" stroke-dasharray="${analysis.healthScore}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <text x="18" y="21" class="gauge-text">${analysis.healthScore}</text>
+                                    </svg>
+                                </div>
                                 <div class="profile-stat-label">Health Score</div>
                             </div>
-                            <div class="profile-stat ${analysis.churnRisk >= 60 ? 'danger' : ''}">
+                            <!-- Churn Risk with Alert -->
+                            <div class="profile-stat ${analysis.churnRisk >= 60 ? 'danger' : analysis.churnRisk >= 40 ? 'warning' : ''}">
                                 <div class="profile-stat-value">${analysis.churnRisk}%</div>
                                 <div class="profile-stat-label">Churn Risk</div>
+                                ${analysis.churnRisk >= 60 ? '<span class="stat-alert">⚠️</span>' : ''}
                             </div>
-                            <div class="profile-stat ${client.remainingSessions <= 2 ? 'danger' : 'success'}">
+                            <!-- Sessions Left -->
+                            <div class="profile-stat ${client.remainingSessions <= 2 ? 'danger' : client.remainingSessions <= 5 ? 'warning' : 'success'}">
                                 <div class="profile-stat-value">${client.remainingSessions !== undefined ? client.remainingSessions : 'N/A'}</div>
                                 <div class="profile-stat-label">Sessions Left</div>
                             </div>
-                            <div class="profile-stat ${expiryClass}">
-                                <div class="profile-stat-value">${expiryInfo}</div>
-                                <div class="profile-stat-label">Expiration</div>
+                            <!-- Predicted Churn Date -->
+                            <div class="profile-stat ${analysis.churnPrediction?.confidence === 'high' ? 'danger' : ''}" title="Confidence: ${analysis.churnPrediction?.confidence || 'medium'} (±${analysis.churnPrediction?.confidenceInterval?.high - analysis.churnPrediction?.daysUntilChurn || 10} days)">
+                                <div class="profile-stat-value">${analysis.churnPrediction?.daysUntilChurn || '--'} days</div>
+                                <div class="profile-stat-label">Est. Churn Date</div>
                             </div>
-                            <div class="profile-stat">
-                                <div class="profile-stat-value">${client.visitCount || 0}</div>
-                                <div class="profile-stat-label">Total Visits</div>
+                            <!-- LTV Projection -->
+                            <div class="profile-stat" title="Current LTV: $${analysis.lifetime?.currentLTV || 0} | Projected: $${analysis.lifetime?.projectedLTV || 0}">
+                                <div class="profile-stat-value">$${analysis.lifetime?.churnAdjustedLTV || analysis.lifetime?.currentLTV || (client.visitCount || 0) * 285}</div>
+                                <div class="profile-stat-label">Lifetime Value</div>
                             </div>
                         </div>
                     </div>
