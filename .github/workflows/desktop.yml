@@ -1,0 +1,183 @@
+# Lume - Cross-Platform CI/CD
+# Builds Electron desktop app for Windows, macOS, and Linux
+
+name: Desktop CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lume/**'
+      - 'lume-desktop/**'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+    inputs:
+      build_platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
+          - linux
+
+jobs:
+  # ============================================
+  # BUILD WINDOWS
+  # ============================================
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    if: github.event.inputs.build_platform == 'windows' || github.event.inputs.build_platform == 'all' || github.event.inputs.build_platform == ''
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: lume-desktop/package-lock.json
+      
+      - name: Install Dependencies
+        working-directory: lume-desktop
+        run: npm ci
+      
+      - name: Copy Web App
+        shell: bash
+        run: |
+          mkdir -p lume-desktop/app
+          cp -r lume/* lume-desktop/app/
+      
+      - name: Build Windows
+        working-directory: lume-desktop
+        run: npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lume-Windows
+          path: |
+            lume-desktop/dist/*.exe
+          retention-days: 30
+
+  # ============================================
+  # BUILD MACOS
+  # ============================================
+  build-mac:
+    name: Build macOS
+    runs-on: macos-latest
+    if: github.event.inputs.build_platform == 'mac' || github.event.inputs.build_platform == 'all' || github.event.inputs.build_platform == ''
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: lume-desktop/package-lock.json
+      
+      - name: Install Dependencies
+        working-directory: lume-desktop
+        run: npm ci
+      
+      - name: Copy Web App
+        run: |
+          mkdir -p lume-desktop/app
+          cp -r lume/* lume-desktop/app/
+      
+      - name: Build macOS
+        working-directory: lume-desktop
+        run: npm run build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lume-macOS
+          path: |
+            lume-desktop/dist/*.dmg
+            lume-desktop/dist/*.zip
+          retention-days: 30
+
+  # ============================================
+  # BUILD LINUX
+  # ============================================
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    if: github.event.inputs.build_platform == 'linux' || github.event.inputs.build_platform == 'all' || github.event.inputs.build_platform == ''
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: lume-desktop/package-lock.json
+      
+      - name: Install Dependencies
+        working-directory: lume-desktop
+        run: npm ci
+      
+      - name: Copy Web App
+        run: |
+          mkdir -p lume-desktop/app
+          cp -r lume/* lume-desktop/app/
+      
+      - name: Build Linux
+        working-directory: lume-desktop
+        run: npm run build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lume-Linux
+          path: |
+            lume-desktop/dist/*.AppImage
+            lume-desktop/dist/*.deb
+          retention-days: 30
+
+  # ============================================
+  # CREATE RELEASE
+  # ============================================
+  create-release:
+    name: Create Release
+    needs: [build-windows, build-mac, build-linux]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: desktop-v${{ github.run_number }}
+          name: Lume Desktop v${{ github.run_number }}
+          draft: true
+          files: |
+            release-artifacts/**/*.exe
+            release-artifacts/**/*.dmg
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

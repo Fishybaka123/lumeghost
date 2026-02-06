@@ -1,0 +1,92 @@
+{
+    "name": "lume-desktop",
+    "version": "1.0.0",
+    "description": "Lume - Med Spa Client Retention Platform (Desktop)",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "build": "electron-builder",
+        "build:win": "electron-builder --win",
+        "build:mac": "electron-builder --mac",
+        "build:linux": "electron-builder --linux",
+        "build:all": "electron-builder -mwl",
+        "dist": "npm run build:win"
+    },
+    "build": {
+        "appId": "com.lume.medspa",
+        "productName": "Lume",
+        "copyright": "Copyright © 2026 Lume",
+        "directories": {
+            "output": "dist",
+            "buildResources": "build"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "app/**/*"
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                },
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "build/icon.ico",
+            "artifactName": "${productName}-${version}-Setup.${ext}"
+        },
+        "mac": {
+            "target": [
+                "dmg",
+                "zip"
+            ],
+            "icon": "build/icon.icns",
+            "category": "public.app-category.business"
+        },
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "icon": "build/icons",
+            "category": "Office"
+        },
+        "nsis": {
+            "oneClick": false,
+            "perMachine": true,
+            "allowToChangeInstallationDirectory": true,
+            "installerIcon": "build/icon.ico",
+            "uninstallerIcon": "build/icon.ico",
+            "license": "LICENSE.md"
+        }
+    },
+    "keywords": [
+        "medspa",
+        "client-retention",
+        "crm",
+        "healthcare"
+    ],
+    "author": {
+        "name": "Lume",
+        "email": "support@lume.com"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1"
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0",
+        "electron-updater": "^6.1.7"
+    }
+}

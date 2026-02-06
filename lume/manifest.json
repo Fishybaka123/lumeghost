@@ -1,0 +1,132 @@
+{
+    "name": "Lume",
+    "short_name": "Lume",
+    "description": "AI-powered client retention platform for med spas",
+    "start_url": "/index.html#/dashboard",
+    "display": "standalone",
+    "background_color": "#0A2540",
+    "theme_color": "#00B8D9",
+    "orientation": "any",
+    "scope": "/",
+    "lang": "en-US",
+    "categories": [
+        "business",
+        "productivity",
+        "medical"
+    ],
+    "icons": [
+        {
+            "src": "icons/icon-72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "screenshots/dashboard.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Dashboard with client metrics"
+        },
+        {
+            "src": "screenshots/clients.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Client management view"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "View your client retention metrics",
+            "url": "/index.html#/dashboard",
+            "icons": [
+                {
+                    "src": "icons/shortcut-dashboard.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Clients",
+            "short_name": "Clients",
+            "description": "View and manage clients",
+            "url": "/index.html#/clients",
+            "icons": [
+                {
+                    "src": "icons/shortcut-clients.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "New Client",
+            "short_name": "New",
+            "description": "Add a new client",
+            "url": "/index.html#/clients?action=new",
+            "icons": [
+                {
+                    "src": "icons/shortcut-add.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "related_applications": [
+        {
+            "platform": "windows",
+            "url": "https://lume.com/download/windows"
+        },
+        {
+            "platform": "itunes",
+            "url": "https://apps.apple.com/app/lume-medspa"
+        }
+    ],
+    "prefer_related_applications": false
+}
