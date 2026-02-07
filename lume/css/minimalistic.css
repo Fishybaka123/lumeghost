@@ -1035,3 +1035,39 @@
     margin: 0;
     color: var(--min-text-secondary) !important;
 }
+
+/* ===========================================
+   BACK BUTTON
+   =========================================== */
+
+.nav-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--min-text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-right: 4px;
+}
+
+.nav-back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.nav-back-btn:hover:not(.disabled) {
+    color: var(--min-text);
+    background: var(--min-surface-hover);
+}
+
+.nav-back-btn.disabled,
+.nav-back-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}

@@ -87,6 +87,10 @@ function router() {
         } else {
             app.innerHTML = matched.handler();
         }
+        // Track navigation for back button
+        if (typeof trackNavigation === 'function') {
+            trackNavigation(path);
+        }
     } else {
         app.innerHTML = renderNotFoundPage('Page not found');
     }

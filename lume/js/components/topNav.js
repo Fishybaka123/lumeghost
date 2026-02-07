@@ -11,8 +11,14 @@ function createTopNav(activePage = 'dashboard') {
         <header class="top-nav" role="banner">
             <a href="#main-content" class="skip-link">Skip to main content</a>
             
-            <!-- Left Section: Hamburger + Logo -->
+            <!-- Left Section: Back + Hamburger + Logo -->
             <div class="top-nav-left">
+                <button class="nav-back-btn" onclick="goBack()" aria-label="Go back" id="back-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M19 12H5"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                </button>
                 <button class="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu" aria-expanded="false">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -334,6 +340,46 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Navigation history tracking
+let navigationHistory = [];
+
+function goBack() {
+    if (navigationHistory.length > 1) {
+        // Remove current page
+        navigationHistory.pop();
+        // Go to previous page
+        const previousPage = navigationHistory.pop();
+        if (previousPage) {
+            navigateTo(previousPage);
+        }
+    }
+}
+
+function updateBackButton() {
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+        if (navigationHistory.length <= 1) {
+            backBtn.disabled = true;
+            backBtn.classList.add('disabled');
+        } else {
+            backBtn.disabled = false;
+            backBtn.classList.remove('disabled');
+        }
+    }
+}
+
+function trackNavigation(path) {
+    // Avoid duplicates
+    if (navigationHistory[navigationHistory.length - 1] !== path) {
+        navigationHistory.push(path);
+        // Keep history limited
+        if (navigationHistory.length > 20) {
+            navigationHistory.shift();
+        }
+    }
+    updateBackButton();
+}
+
 // Expose globally
 window.createTopNav = createTopNav;
 window.toggleMobileMenu = toggleMobileMenu;
@@ -341,4 +387,7 @@ window.closeMobileMenu = closeMobileMenu;
 window.openSearchModal = openSearchModal;
 window.closeSearchModal = closeSearchModal;
 window.toggleUserMenu = toggleUserMenu;
+window.goBack = goBack;
+window.updateBackButton = updateBackButton;
+window.trackNavigation = trackNavigation;
 
