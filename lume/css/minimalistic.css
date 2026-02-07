@@ -449,3 +449,263 @@
 .app-layout-topnav .gauge-label {
     color: var(--min-text) !important;
 }
+
+/* ===========================================
+   CLIENTS PAGE - COMPREHENSIVE OVERRIDES
+   =========================================== */
+
+.app-layout-topnav .clients-table-container,
+.clients-page .clients-table-container {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+    box-shadow: none !important;
+}
+
+.app-layout-topnav .filter-pill,
+.clients-page .filter-pill {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .filter-pill:hover,
+.clients-page .filter-pill:hover {
+    background: var(--min-surface-hover) !important;
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .filter-pill.active,
+.clients-page .filter-pill.active {
+    background: var(--min-accent) !important;
+    border-color: var(--min-accent) !important;
+    color: white !important;
+}
+
+/* Client rows */
+.app-layout-topnav .client-row,
+.clients-page .client-row {
+    background: var(--min-surface) !important;
+}
+
+.app-layout-topnav .client-name,
+.clients-page .client-name {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .client-email,
+.clients-page .client-email {
+    color: var(--min-text-muted) !important;
+}
+
+.app-layout-topnav .client-phone,
+.clients-page .client-phone {
+    color: var(--min-text-secondary) !important;
+}
+
+/* Health score badge */
+.app-layout-topnav .health-score-badge,
+.clients-page .health-score-badge {
+    font-weight: 500 !important;
+}
+
+/* Membership badges */
+.app-layout-topnav .membership-badge,
+.clients-page .membership-badge {
+    background: var(--min-accent-muted) !important;
+    color: var(--min-accent) !important;
+}
+
+/* Action buttons in table */
+.app-layout-topnav .client-actions button,
+.clients-page .client-actions button {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .client-actions button:hover,
+.clients-page .client-actions button:hover {
+    color: var(--min-text) !important;
+}
+
+/* Filter select */
+.app-layout-topnav .filter-select,
+.clients-page .filter-select {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .filter-select option,
+.clients-page .filter-select option {
+    background: var(--min-surface) !important;
+    color: var(--min-text) !important;
+}
+
+/* ===========================================
+   SECTION HEADER TEXT - FIX VISIBILITY
+   =========================================== */
+
+.app-layout-topnav .section-header h2,
+.app-layout-topnav .section-header-content h2 {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .section-header p,
+.app-layout-topnav .section-header-content p {
+    color: var(--min-text-secondary) !important;
+}
+
+/* ===========================================
+   ALL DIRECT TEXT ELEMENTS
+   =========================================== */
+
+.app-layout-topnav .analytics-metric-info .metric-value {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .analytics-metric-info .metric-label {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .analytics-metric-info .metric-subtitle {
+    color: var(--min-text-muted) !important;
+}
+
+/* Health bar labels */
+.app-layout-topnav .health-bar-label,
+.app-layout-topnav .health-bar-label span {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .health-bar-value {
+    color: var(--min-text) !important;
+}
+
+/* ===========================================
+   LIGHT THEME SUPPORT
+   =========================================== */
+
+[data-theme="light"] .app-layout-topnav,
+[data-theme="light"].app-layout-topnav {
+    --min-bg: #FFFFFF;
+    --min-surface: #F6F8FA;
+    --min-surface-hover: #F0F2F5;
+    --min-accent: #0969DA;
+    --min-accent-muted: rgba(9, 105, 218, 0.1);
+    --min-text: #1F2328;
+    --min-text-secondary: #656D76;
+    --min-text-muted: #8C959F;
+    --min-border: rgba(0, 0, 0, 0.1);
+    --min-border-subtle: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .top-nav {
+    background: #FFFFFF !important;
+    border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .nav-link,
+[data-theme="light"] .nav-icon-btn {
+    color: #656D76 !important;
+}
+
+[data-theme="light"] .nav-link:hover,
+[data-theme="light"] .nav-link.active,
+[data-theme="light"] .nav-icon-btn:hover {
+    color: #1F2328 !important;
+}
+
+[data-theme="light"] .user-avatar {
+    background: #0969DA !important;
+    color: white !important;
+    border-color: transparent !important;
+}
+
+/* ===========================================
+   COMMUNICATION PAGE OVERRIDES
+   =========================================== */
+
+.app-layout-topnav .message-preview,
+.app-layout-topnav .email-preview-content {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .message-subject,
+.app-layout-topnav .message-title {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .communication-tab {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .communication-tab.active,
+.app-layout-topnav .communication-tab:hover {
+    color: var(--min-text) !important;
+}
+
+/* ===========================================
+   OPERATIONS PAGE OVERRIDES
+   =========================================== */
+
+.app-layout-topnav .nudge-card-title,
+.app-layout-topnav .nudge-card h3 {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .nudge-card-description,
+.app-layout-topnav .nudge-card p {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .workflow-step {
+    color: var(--min-text-secondary) !important;
+}
+
+/* ===========================================
+   SETTINGS PAGE OVERRIDES
+   =========================================== */
+
+.app-layout-topnav .settings-section,
+.app-layout-topnav .setting-card {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+}
+
+.app-layout-topnav .setting-label,
+.app-layout-topnav .setting-name {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .setting-description,
+.app-layout-topnav .setting-hint {
+    color: var(--min-text-secondary) !important;
+}
+
+/* Toggle switches */
+.app-layout-topnav .toggle-switch {
+    background: var(--min-border) !important;
+}
+
+.app-layout-topnav .toggle-switch.active {
+    background: var(--min-accent) !important;
+}
+
+/* ===========================================
+   MODAL OVERRIDES
+   =========================================== */
+
+.app-layout-topnav .modal-content,
+.modal-content {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+}
+
+.app-layout-topnav .modal-title,
+.modal-title {
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .modal-body,
+.modal-body {
+    color: var(--min-text-secondary) !important;
+}
