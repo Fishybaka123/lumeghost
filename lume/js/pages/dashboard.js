@@ -55,10 +55,7 @@ function renderDashboardPage() {
                     <!-- Metrics Grid -->
                     <div class="metrics-grid">
                         ${createMetricFromData('totalClients', METRICS.totalClients)}
-                        ${createMetricFromData('activeLeads', METRICS.activeLeads)}
                         ${createMetricFromData('atRiskClients', METRICS.atRiskClients)}
-                        ${createMetricFromData('leadConversion', METRICS.leadConversion)}
-                        ${createMetricFromData('revenueSaved', METRICS.revenueSaved)}
                         ${createMetricFromData('healthScore', METRICS.healthScore)}
                     </div>
                     
