@@ -8,32 +8,31 @@ function formatCurrency(value) {
 }
 
 function createMetricCard(config) {
-    const { label, value, prefix = '', suffix = '', change, trend, icon, color } = config;
+    // Safely destructure with defaults
+    const label = config.label || 'Metric';
+    const value = config.value != null ? config.value : 0;
+    const prefix = config.prefix || '';
+    const suffix = config.suffix || '';
+    const change = config.change != null ? config.change : 0;
+    const trend = config.trend || 'neutral';
+    const icon = config.icon || '';
+    const color = config.color || 'blue';
 
-    // Handle undefined/null values
-    const safeValue = value != null ? value : 0;
-    const safeChange = change != null ? change : 0;
-    const safeTrend = trend || 'neutral';
+    // Format the value for display
+    const formattedValue = typeof value === 'number' ? value.toLocaleString() : String(value);
+    const displayValue = `${prefix}${formattedValue}${suffix}`;
 
-    const formattedValue = typeof safeValue === 'number' && !prefix && !suffix
-        ? safeValue.toLocaleString()
-        : safeValue;
-
-    const displayValue = prefix === '$'
-        ? safeValue.toLocaleString()
-        : formattedValue;
-
-    const trendIcon = safeTrend === 'positive'
+    const trendIcon = trend === 'positive'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>'
-        : safeTrend === 'negative'
+        : trend === 'negative'
             ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'
             : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
 
     // Don't show change if it's 0
-    const changeDisplay = safeChange !== 0
-        ? `<div class="metric-trend ${safeTrend}">
+    const changeDisplay = change !== 0
+        ? `<div class="metric-trend ${trend}">
                ${trendIcon}
-               <span>${Math.abs(safeChange)}%</span>
+               <span>${Math.abs(change)}%</span>
            </div>`
         : `<div class="metric-trend neutral">
                <span class="no-change">—</span>
@@ -46,7 +45,7 @@ function createMetricCard(config) {
             </div>
             <div class="metric-content">
                 <div class="metric-label">${label}</div>
-                <div class="metric-value">${prefix}${displayValue}${suffix}</div>
+                <div class="metric-value">${displayValue}</div>
                 ${changeDisplay}
             </div>
         </div>

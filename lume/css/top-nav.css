@@ -461,6 +461,69 @@
 }
 
 /* ===========================================
+   METRIC CARDS IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav .metric-card {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .metric-card:hover {
+    border-color: var(--nav-border-active);
+    transform: translateY(-2px);
+}
+
+.app-layout-topnav .metric-label {
+    color: var(--nav-text-secondary);
+}
+
+.app-layout-topnav .metric-value {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .metric-trend {
+    color: var(--nav-text-muted);
+}
+
+.app-layout-topnav .metric-trend.positive {
+    color: #10B981;
+}
+
+.app-layout-topnav .metric-trend.negative {
+    color: #EF4444;
+}
+
+.app-layout-topnav .no-change {
+    color: var(--nav-text-muted);
+}
+
+/* Page Header Text */
+.app-layout-topnav .page-title-section h1 {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .page-title-section p {
+    color: var(--nav-text-secondary);
+}
+
+/* Quick View Section */
+.app-layout-topnav .quick-view-section {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.app-layout-topnav .quick-view-title {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .empty-table-message {
+    color: var(--nav-text-secondary);
+}
+
+/* ===========================================
    TEXT COLORS FOR DARK THEME
    =========================================== */
 
@@ -630,4 +693,125 @@
     .app-layout-topnav .main-content {
         padding-top: 60px;
     }
+}
+
+/* ===========================================
+   COMPREHENSIVE TEXT COLOR OVERRIDES
+   Ensures all text is visible on dark theme
+   =========================================== */
+
+/* Override gray color variables for dark theme */
+.app-layout-topnav {
+    /* Map light theme grays to dark theme colors */
+    --gray-50: #1E2438;
+    --gray-100: rgba(255, 255, 255, 0.1);
+    --gray-200: rgba(255, 255, 255, 0.15);
+    --gray-300: rgba(255, 255, 255, 0.3);
+    --gray-400: rgba(255, 255, 255, 0.5);
+    --gray-500: rgba(255, 255, 255, 0.6);
+    --gray-600: rgba(255, 255, 255, 0.7);
+    --gray-700: rgba(255, 255, 255, 0.8);
+    --gray-800: rgba(255, 255, 255, 0.9);
+    --gray-900: #FFFFFF;
+}
+
+/* Ensure all text elements are visible */
+.app-layout-topnav .empty-state-card h3,
+.app-layout-topnav .empty-state-card p,
+.app-layout-topnav .section-title,
+.app-layout-topnav .card-header,
+.app-layout-topnav .card-body,
+.app-layout-topnav label,
+.app-layout-topnav .form-label,
+.app-layout-topnav .setting-title,
+.app-layout-topnav .setting-description,
+.app-layout-topnav .profile-name,
+.app-layout-topnav .profile-email,
+.app-layout-topnav .stat-value,
+.app-layout-topnav .stat-label,
+.app-layout-topnav .panel-title,
+.app-layout-topnav .panel-description,
+.app-layout-topnav .list-item-title,
+.app-layout-topnav .list-item-description {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .text-secondary,
+.app-layout-topnav .text-muted,
+.app-layout-topnav .caption,
+.app-layout-topnav .subtitle,
+.app-layout-topnav .helper-text,
+.app-layout-topnav .empty-state-card p,
+.app-layout-topnav .setting-description,
+.app-layout-topnav .profile-email {
+    color: var(--nav-text-secondary);
+}
+
+/* Settings page specific overrides */
+.app-layout-topnav .settings-nav-item {
+    color: var(--nav-text-secondary);
+}
+
+.app-layout-topnav .settings-nav-item.active,
+.app-layout-topnav .settings-nav-item:hover {
+    color: var(--nav-text-primary);
+    background: var(--nav-surface-hover);
+}
+
+.app-layout-topnav .settings-section-title {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .settings-description {
+    color: var(--nav-text-secondary);
+}
+
+/* Operations page specific overrides */
+.app-layout-topnav .operations-card,
+.app-layout-topnav .nudge-card,
+.app-layout-topnav .campaign-card {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .operations-title,
+.app-layout-topnav .nudge-title,
+.app-layout-topnav .campaign-title {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .operations-description,
+.app-layout-topnav .nudge-description,
+.app-layout-topnav .campaign-description {
+    color: var(--nav-text-secondary);
+}
+
+/* Client table overrides */
+.app-layout-topnav .client-name {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .client-email {
+    color: var(--nav-text-secondary);
+}
+
+/* Empty state styling */
+.app-layout-topnav .empty-state-card {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .empty-state-card h3 {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .empty-state-card p {
+    color: var(--nav-text-secondary);
+}
+
+/* Filter selects */
+.app-layout-topnav .filter-select {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    color: var(--nav-text-primary);
 }
