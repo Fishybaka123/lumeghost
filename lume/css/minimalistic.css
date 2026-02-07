@@ -1055,19 +1055,38 @@
     margin-right: 4px;
 }
 
-.nav-back-btn svg {
+.nav-back-btn svg,
+.nav-forward-btn svg {
     width: 20px;
     height: 20px;
 }
 
-.nav-back-btn:hover:not(.disabled) {
+.nav-back-btn:hover:not(.disabled),
+.nav-forward-btn:hover:not(.disabled) {
     color: var(--min-text);
     background: var(--min-surface-hover);
 }
 
 .nav-back-btn.disabled,
-.nav-back-btn:disabled {
+.nav-back-btn:disabled,
+.nav-forward-btn.disabled,
+.nav-forward-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+.nav-forward-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--min-text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-right: 4px;
 }

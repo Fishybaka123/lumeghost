@@ -11,12 +11,18 @@ function createTopNav(activePage = 'dashboard') {
         <header class="top-nav" role="banner">
             <a href="#main-content" class="skip-link">Skip to main content</a>
             
-            <!-- Left Section: Back + Hamburger + Logo -->
+            <!-- Left Section: Back + Forward + Hamburger + Logo -->
             <div class="top-nav-left">
                 <button class="nav-back-btn" onclick="goBack()" aria-label="Go back" id="back-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M19 12H5"/>
                         <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                </button>
+                <button class="nav-forward-btn" onclick="goForward()" aria-label="Go forward" id="forward-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M5 12h14"/>
+                        <polyline points="12 5 19 12 12 19"/>
                     </svg>
                 </button>
                 <button class="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu" aria-expanded="false">
@@ -342,17 +348,37 @@ document.addEventListener('keydown', (e) => {
 
 // Navigation history tracking
 let navigationHistory = [];
+let forwardHistory = [];
 
 function goBack() {
     if (navigationHistory.length > 1) {
-        // Remove current page
-        navigationHistory.pop();
+        // Remove current page and save to forward history
+        const currentPage = navigationHistory.pop();
+        forwardHistory.push(currentPage);
         // Go to previous page
-        const previousPage = navigationHistory.pop();
+        const previousPage = navigationHistory[navigationHistory.length - 1];
         if (previousPage) {
-            navigateTo(previousPage);
+            // Navigate without tracking (we're going back)
+            window.location.hash = previousPage;
         }
+        updateNavButtons();
     }
+}
+
+function goForward() {
+    if (forwardHistory.length > 0) {
+        const nextPage = forwardHistory.pop();
+        if (nextPage) {
+            navigationHistory.push(nextPage);
+            window.location.hash = nextPage;
+        }
+        updateNavButtons();
+    }
+}
+
+function updateNavButtons() {
+    updateBackButton();
+    updateForwardButton();
 }
 
 function updateBackButton() {
@@ -368,16 +394,31 @@ function updateBackButton() {
     }
 }
 
+function updateForwardButton() {
+    const forwardBtn = document.getElementById('forward-btn');
+    if (forwardBtn) {
+        if (forwardHistory.length === 0) {
+            forwardBtn.disabled = true;
+            forwardBtn.classList.add('disabled');
+        } else {
+            forwardBtn.disabled = false;
+            forwardBtn.classList.remove('disabled');
+        }
+    }
+}
+
 function trackNavigation(path) {
     // Avoid duplicates
     if (navigationHistory[navigationHistory.length - 1] !== path) {
         navigationHistory.push(path);
+        // Clear forward history when navigating to a new page
+        forwardHistory = [];
         // Keep history limited
         if (navigationHistory.length > 20) {
             navigationHistory.shift();
         }
     }
-    updateBackButton();
+    updateNavButtons();
 }
 
 // Expose globally
@@ -388,6 +429,8 @@ window.openSearchModal = openSearchModal;
 window.closeSearchModal = closeSearchModal;
 window.toggleUserMenu = toggleUserMenu;
 window.goBack = goBack;
+window.goForward = goForward;
 window.updateBackButton = updateBackButton;
+window.updateForwardButton = updateForwardButton;
 window.trackNavigation = trackNavigation;
 
