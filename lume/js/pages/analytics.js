@@ -91,10 +91,10 @@ function renderAnalyticsContent(clients) {
             </div>
             
             <div class="analytics-metrics-grid">
-                ${createMetricCard('Total Clients', stats.totalClients, '', 'users', 'blue')}
-                ${createMetricCard('At-Risk Clients', stats.atRisk, stats.atRiskPercent + '%', 'alert-triangle', stats.atRisk > 0 ? 'coral' : 'emerald')}
-                ${createMetricCard('Avg Health Score', stats.avgHealth, 'of 100', 'heart', stats.avgHealth >= 70 ? 'emerald' : 'amber')}
-                ${createMetricCard('Total Revenue', '$' + formatNumber(stats.totalRevenue), 'lifetime', 'dollar-sign', 'purple')}
+                ${createAnalyticsMetric('Total Clients', stats.totalClients || 0, '', 'users', 'blue')}
+                ${createAnalyticsMetric('At-Risk Clients', stats.atRisk || 0, (stats.atRiskPercent || 0) + '%', 'alert-triangle', stats.atRisk > 0 ? 'coral' : 'emerald')}
+                ${createAnalyticsMetric('Avg Health Score', stats.avgHealth || 0, 'of 100', 'heart', stats.avgHealth >= 70 ? 'emerald' : 'amber')}
+                ${createAnalyticsMetric('Total Revenue', '$' + formatNumber(stats.totalRevenue || 0), 'lifetime', 'dollar-sign', 'purple')}
             </div>
         </section>
         
@@ -238,7 +238,7 @@ function calculateAnalyticsStats(clients) {
     };
 }
 
-function createMetricCard(label, value, subtitle, icon, color) {
+function createAnalyticsMetric(label, value, subtitle, icon, color) {
     const iconSvg = getMetricIcon(icon);
 
     return `
