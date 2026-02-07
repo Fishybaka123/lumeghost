@@ -173,8 +173,161 @@ function closeMobileMenu() {
 }
 
 function openSearchModal() {
-    // Placeholder for search modal
-    showToast('Search feature coming soon', 'info');
+    // Create search modal if it doesn't exist
+    let modal = document.getElementById('search-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'search-modal';
+        modal.className = 'search-modal-overlay';
+        modal.innerHTML = `
+            <div class="search-modal">
+                <div class="search-modal-header">
+                    <div class="search-input-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="global-search-input" placeholder="Search clients, memberships, dates..." autofocus>
+                        <kbd>ESC</kbd>
+                    </div>
+                </div>
+                <div class="search-results" id="search-results">
+                    <div class="search-hint">
+                        <p>Search by:</p>
+                        <ul>
+                            <li><strong>Name</strong> - client name</li>
+                            <li><strong>Email</strong> - email address</li>
+                            <li><strong>Phone</strong> - phone number</li>
+                            <li><strong>Membership</strong> - VIP, Premium, Basic</li>
+                            <li><strong>Treatment</strong> - treatment type</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeSearchModal();
+        });
+
+        // Search input handler
+        const input = document.getElementById('global-search-input');
+        input.addEventListener('input', (e) => performGlobalSearch(e.target.value));
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSearchModal();
+            if (e.key === 'Enter') {
+                const firstResult = document.querySelector('.search-result-item');
+                if (firstResult) firstResult.click();
+            }
+        });
+    }
+
+    modal.classList.add('active');
+    document.getElementById('global-search-input').value = '';
+    document.getElementById('global-search-input').focus();
+    document.getElementById('search-results').innerHTML = `
+        <div class="search-hint">
+            <p>Search by:</p>
+            <ul>
+                <li><strong>Name</strong> - client name</li>
+                <li><strong>Email</strong> - email address</li>
+                <li><strong>Phone</strong> - phone number</li>
+                <li><strong>Membership</strong> - VIP, Premium, Basic</li>
+                <li><strong>Treatment</strong> - treatment type</li>
+            </ul>
+        </div>
+    `;
+}
+
+function closeSearchModal() {
+    const modal = document.getElementById('search-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function performGlobalSearch(query) {
+    const resultsContainer = document.getElementById('search-results');
+    if (!query || query.length < 2) {
+        resultsContainer.innerHTML = `
+            <div class="search-hint">
+                <p>Type at least 2 characters to search...</p>
+            </div>
+        `;
+        return;
+    }
+
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    const q = query.toLowerCase();
+
+    const results = clients.filter(client => {
+        // Search across all relevant fields
+        const searchableFields = [
+            client.name,
+            client.email,
+            client.phone,
+            client.membershipTier,
+            client.treatment,
+            client.lastVisit,
+            client.expireDate,
+            client.notes,
+            String(client.healthScore),
+            String(client.churnRisk)
+        ].filter(Boolean).map(f => String(f).toLowerCase());
+
+        return searchableFields.some(field => field.includes(q));
+    }).slice(0, 10); // Limit to 10 results
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="search-no-results">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <p>No results found for "${query}"</p>
+            </div>
+        `;
+        return;
+    }
+
+    resultsContainer.innerHTML = results.map(client => `
+        <div class="search-result-item" onclick="goToClient(${client.id}); closeSearchModal();">
+            <div class="search-result-avatar">${getInitials(client.name)}</div>
+            <div class="search-result-info">
+                <div class="search-result-name">${highlightMatch(client.name, q)}</div>
+                <div class="search-result-details">
+                    ${client.email ? `<span>${highlightMatch(client.email, q)}</span>` : ''}
+                    ${client.membershipTier ? `<span class="membership-tag">${client.membershipTier}</span>` : ''}
+                    ${client.treatment ? `<span>${client.treatment}</span>` : ''}
+                </div>
+            </div>
+            <div class="search-result-meta">
+                <span class="health-indicator ${getHealthClass(client.healthScore)}">${client.healthScore || 0}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function highlightMatch(text, query) {
+    if (!text) return '';
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+function getInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function getHealthClass(score) {
+    if (score >= 70) return 'healthy';
+    if (score >= 40) return 'warning';
+    return 'at-risk';
+}
+
+function goToClient(clientId) {
+    navigateTo(`/clients/${clientId}`);
 }
 
 function toggleUserMenu() {
@@ -182,9 +335,19 @@ function toggleUserMenu() {
     showToast('User menu coming soon', 'info');
 }
 
+// Keyboard shortcut for search (Cmd/Ctrl + K)
+document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openSearchModal();
+    }
+});
+
 // Expose globally
 window.createTopNav = createTopNav;
 window.toggleMobileMenu = toggleMobileMenu;
 window.closeMobileMenu = closeMobileMenu;
 window.openSearchModal = openSearchModal;
+window.closeSearchModal = closeSearchModal;
 window.toggleUserMenu = toggleUserMenu;
+
