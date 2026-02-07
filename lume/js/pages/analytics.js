@@ -188,6 +188,26 @@ function renderAnalyticsContent(clients) {
                 ${renderAIInsightsCards(stats)}
             </div>
         </section>
+        
+        <!-- Notifications Section -->
+        <section class="analytics-section notifications-section">
+            <div class="section-header">
+                <div class="section-header-icon coral">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Notifications</h2>
+                    <p>Recent alerts and updates</p>
+                </div>
+            </div>
+            
+            <div class="notifications-compact">
+                ${renderNotifications()}
+            </div>
+        </section>
     `;
 }
 
@@ -467,4 +487,67 @@ function exportAnalyticsReport() {
     setTimeout(() => {
         showToast('✅ Report ready for download!', 'success');
     }, 1500);
+}
+
+function renderNotifications() {
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    const notifications = [];
+
+    // Generate notifications based on client data
+    const atRiskClients = clients.filter(c => c.churnRisk >= 60);
+    if (atRiskClients.length > 0) {
+        notifications.push({
+            type: 'warning',
+            icon: '⚠️',
+            title: `${atRiskClients.length} clients at risk`,
+            desc: 'Consider sending re-engagement messages',
+            time: 'Now'
+        });
+    }
+
+    const expiringClients = clients.filter(c => {
+        if (!c.expireDate) return false;
+        const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        return days <= 7 && days > 0;
+    });
+    if (expiringClients.length > 0) {
+        notifications.push({
+            type: 'info',
+            icon: '📅',
+            title: `${expiringClients.length} memberships expiring`,
+            desc: 'Within the next 7 days',
+            time: 'Today'
+        });
+    }
+
+    const lowHealth = clients.filter(c => c.healthScore < 40).length;
+    if (lowHealth > 0) {
+        notifications.push({
+            type: 'danger',
+            icon: '❤️',
+            title: `${lowHealth} clients need attention`,
+            desc: 'Health score below 40',
+            time: 'Now'
+        });
+    }
+
+    if (notifications.length === 0) {
+        return `
+            <div class="notification-empty">
+                <span>✓</span>
+                <p>All caught up! No new notifications.</p>
+            </div>
+        `;
+    }
+
+    return notifications.slice(0, 4).map(n => `
+        <div class="notification-item ${n.type}">
+            <span class="notification-icon">${n.icon}</span>
+            <div class="notification-content">
+                <div class="notification-title">${n.title}</div>
+                <div class="notification-desc">${n.desc}</div>
+            </div>
+            <span class="notification-time">${n.time}</span>
+        </div>
+    `).join('');
 }
