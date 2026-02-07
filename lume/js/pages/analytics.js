@@ -11,12 +11,10 @@ function renderAnalyticsPage() {
     const hasData = clients.length > 0;
 
     return `
-        <div class="app-layout">
-            ${createSidebar('analytics')}
+        <div class="app-layout-topnav">
+            ${createTopNav('analytics')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content analytics-page">
                     <!-- Page Header -->
                     <div class="page-header">

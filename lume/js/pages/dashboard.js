@@ -21,12 +21,10 @@ function renderDashboardPage() {
         : [];
 
     return `
-        <div class="app-layout">
-            ${createSidebar('dashboard')}
+        <div class="app-layout-topnav">
+            ${createTopNav('dashboard')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">

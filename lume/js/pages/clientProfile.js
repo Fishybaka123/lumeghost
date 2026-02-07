@@ -38,12 +38,10 @@ function renderClientProfilePage(clientId) {
     }
 
     return `
-        <div class="app-layout client-profile-page">
-            ${createSidebar('clients')}
+        <div class="app-layout-topnav client-profile-page">
+            ${createTopNav('clients')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <button class="back-button" onclick="navigateTo('/clients')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

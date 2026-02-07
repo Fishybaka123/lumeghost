@@ -21,12 +21,10 @@ function renderCommunicationsPage() {
     const recentMessages = CommunicationService ? CommunicationService.getRecent(15) : [];
 
     return `
-        <div class="app-layout communications-page">
-            ${createSidebar('communications')}
+        <div class="app-layout-topnav communications-page">
+            ${createTopNav('communications')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">

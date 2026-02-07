@@ -9,12 +9,10 @@ function renderSettingsPage() {
     const settings = user.settings || {};
 
     return `
-        <div class="app-layout settings-page">
-            ${createSidebar('settings')}
+        <div class="app-layout-topnav settings-page">
+            ${createTopNav('settings')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">

@@ -8,12 +8,10 @@ function renderOperationsPage() {
         JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
     return `
-        <div class="app-layout">
-            ${createSidebar('operations')}
+        <div class="app-layout-topnav">
+            ${createTopNav('operations')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content operations-page">
                     <!-- Page Header -->
                     <div class="page-header">
