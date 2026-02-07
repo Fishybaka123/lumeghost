@@ -8,10 +8,10 @@
    =========================================== */
 
 :root {
-    /* Simplified Dark Theme - Slightly Lightened */
-    --min-bg: #151B23;
-    --min-surface: #1E252E;
-    --min-surface-hover: #262E38;
+    /* Simplified Dark Theme - Lightened */
+    --min-bg: #1C242E;
+    --min-surface: #252E3A;
+    --min-surface-hover: #2E3844;
 
     /* Single Accent Color */
     --min-accent: #58A6FF;
