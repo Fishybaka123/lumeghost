@@ -1,0 +1,451 @@
+/* ===========================================
+   MINIMALISTIC DESIGN OVERRIDES
+   Clean, flat, professional aesthetic
+   =========================================== */
+
+/* ===========================================
+   MINIMALISTIC COLOR PALETTE
+   =========================================== */
+
+:root {
+    /* Simplified Dark Theme */
+    --min-bg: #0D1117;
+    --min-surface: #161B22;
+    --min-surface-hover: #1C2128;
+
+    /* Single Accent Color */
+    --min-accent: #58A6FF;
+    --min-accent-muted: rgba(88, 166, 255, 0.15);
+
+    /* Text Hierarchy */
+    --min-text: #E6EDF3;
+    --min-text-secondary: #8B949E;
+    --min-text-muted: #6E7681;
+
+    /* Borders - Minimal */
+    --min-border: rgba(255, 255, 255, 0.08);
+    --min-border-subtle: rgba(255, 255, 255, 0.04);
+
+    /* Status Colors */
+    --min-success: #3FB950;
+    --min-warning: #D29922;
+    --min-danger: #F85149;
+}
+
+/* ===========================================
+   OVERRIDE EXISTING THEME
+   =========================================== */
+
+.app-layout-topnav {
+    /* Override complex gradients with solid color */
+    background: var(--min-bg) !important;
+    background-image: none !important;
+}
+
+/* ===========================================
+   TOP NAVIGATION - MINIMAL
+   =========================================== */
+
+.top-nav {
+    background: var(--min-bg) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid var(--min-border) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.top-nav-logo {
+    color: var(--min-text) !important;
+}
+
+.logo-text {
+    font-weight: 500 !important;
+    letter-spacing: 1px !important;
+}
+
+.nav-link {
+    font-weight: 400 !important;
+    letter-spacing: 0.5px !important;
+    color: var(--min-text-secondary) !important;
+    transition: color 0.15s ease !important;
+}
+
+.nav-link:hover {
+    color: var(--min-text) !important;
+    background: transparent !important;
+}
+
+.nav-link.active {
+    color: var(--min-text) !important;
+    background: transparent !important;
+}
+
+.nav-link.active::after {
+    background: var(--min-accent) !important;
+    box-shadow: none !important;
+}
+
+.nav-icon-btn {
+    color: var(--min-text-secondary) !important;
+    transition: color 0.15s ease !important;
+}
+
+.nav-icon-btn:hover {
+    color: var(--min-text) !important;
+    background: transparent !important;
+}
+
+.user-avatar {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+}
+
+.user-avatar-btn:hover .user-avatar {
+    border-color: var(--min-accent) !important;
+    box-shadow: none !important;
+}
+
+/* ===========================================
+   CARDS - FLAT DESIGN
+   =========================================== */
+
+.app-layout-topnav .card,
+.app-layout-topnav [class*="-card"],
+.app-layout-topnav .metric-card,
+.app-layout-topnav .analytics-metric,
+.app-layout-topnav .analytics-card,
+.app-layout-topnav .settings-card,
+.app-layout-topnav .profile-section {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease !important;
+}
+
+.app-layout-topnav .card:hover,
+.app-layout-topnav [class*="-card"]:hover,
+.app-layout-topnav .metric-card:hover,
+.app-layout-topnav .analytics-metric:hover,
+.app-layout-topnav .analytics-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: var(--min-border) !important;
+}
+
+/* ===========================================
+   METRIC CARDS - MINIMAL
+   =========================================== */
+
+.app-layout-topnav .metric-icon,
+.app-layout-topnav .analytics-metric-icon,
+.app-layout-topnav .section-header-icon {
+    background: var(--min-accent-muted) !important;
+    border-radius: 6px !important;
+}
+
+.app-layout-topnav .metric-icon svg,
+.app-layout-topnav .analytics-metric-icon svg,
+.app-layout-topnav .section-header-icon svg {
+    color: var(--min-accent) !important;
+}
+
+/* Remove gradient colors from icons */
+.app-layout-topnav .metric-icon.blue,
+.app-layout-topnav .metric-icon.coral,
+.app-layout-topnav .metric-icon.amber,
+.app-layout-topnav .metric-icon.emerald,
+.app-layout-topnav .metric-icon.purple,
+.app-layout-topnav .metric-icon.teal {
+    background: var(--min-accent-muted) !important;
+}
+
+/* ===========================================
+   TYPOGRAPHY - CLEAN
+   =========================================== */
+
+.app-layout-topnav h1,
+.app-layout-topnav h2,
+.app-layout-topnav h3,
+.app-layout-topnav h4 {
+    color: var(--min-text) !important;
+    font-weight: 500 !important;
+}
+
+.app-layout-topnav p,
+.app-layout-topnav span,
+.app-layout-topnav label {
+    color: var(--min-text-secondary) !important;
+}
+
+.app-layout-topnav .metric-value {
+    color: var(--min-text) !important;
+    font-weight: 600 !important;
+}
+
+.app-layout-topnav .metric-label {
+    color: var(--min-text-muted) !important;
+    font-weight: 400 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* ===========================================
+   BUTTONS - MINIMAL
+   =========================================== */
+
+.app-layout-topnav .btn-primary {
+    background: var(--min-accent) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    transition: opacity 0.15s ease !important;
+}
+
+.app-layout-topnav .btn-primary:hover {
+    background: var(--min-accent) !important;
+    opacity: 0.9 !important;
+    box-shadow: none !important;
+}
+
+.app-layout-topnav .btn-secondary {
+    background: transparent !important;
+    border: 1px solid var(--min-border) !important;
+    border-radius: 6px !important;
+    color: var(--min-text) !important;
+}
+
+.app-layout-topnav .btn-secondary:hover {
+    background: var(--min-surface-hover) !important;
+    border-color: var(--min-border) !important;
+}
+
+/* ===========================================
+   FORMS - MINIMAL
+   =========================================== */
+
+.app-layout-topnav input,
+.app-layout-topnav select,
+.app-layout-topnav textarea,
+.app-layout-topnav .input {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+    border-radius: 6px !important;
+    color: var(--min-text) !important;
+    transition: border-color 0.15s ease !important;
+}
+
+.app-layout-topnav input:focus,
+.app-layout-topnav select:focus,
+.app-layout-topnav textarea:focus,
+.app-layout-topnav .input:focus {
+    border-color: var(--min-accent) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.app-layout-topnav input::placeholder,
+.app-layout-topnav .input::placeholder {
+    color: var(--min-text-muted) !important;
+}
+
+/* ===========================================
+   TABLES - MINIMAL
+   =========================================== */
+
+.app-layout-topnav table {
+    background: transparent !important;
+}
+
+.app-layout-topnav th {
+    background: var(--min-surface) !important;
+    color: var(--min-text-muted) !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid var(--min-border) !important;
+}
+
+.app-layout-topnav td {
+    color: var(--min-text-secondary) !important;
+    border-bottom: 1px solid var(--min-border-subtle) !important;
+}
+
+.app-layout-topnav tr:hover {
+    background: var(--min-surface-hover) !important;
+}
+
+/* ===========================================
+   BADGES - MINIMAL
+   =========================================== */
+
+.app-layout-topnav .badge {
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    border: none !important;
+}
+
+.app-layout-topnav .churn-badge.high {
+    background: rgba(248, 81, 73, 0.15) !important;
+    color: var(--min-danger) !important;
+}
+
+.app-layout-topnav .churn-badge.medium {
+    background: rgba(210, 153, 34, 0.15) !important;
+    color: var(--min-warning) !important;
+}
+
+.app-layout-topnav .churn-badge.low {
+    background: rgba(63, 185, 80, 0.15) !important;
+    color: var(--min-success) !important;
+}
+
+/* ===========================================
+   SCROLLBAR - MINIMAL
+   =========================================== */
+
+.app-layout-topnav ::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.app-layout-topnav ::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.app-layout-topnav ::-webkit-scrollbar-thumb {
+    background: var(--min-border) !important;
+    border-radius: 3px !important;
+}
+
+.app-layout-topnav ::-webkit-scrollbar-thumb:hover {
+    background: var(--min-text-muted) !important;
+}
+
+/* ===========================================
+   PAGE CONTENT - SPACING
+   =========================================== */
+
+.app-layout-topnav .page-content {
+    padding: 40px !important;
+}
+
+.app-layout-topnav .metrics-grid {
+    gap: 16px !important;
+}
+
+.app-layout-topnav .page-title-section h1 {
+    font-size: 24px !important;
+    font-weight: 500 !important;
+}
+
+.app-layout-topnav .page-title-section p {
+    font-size: 14px !important;
+    color: var(--min-text-muted) !important;
+}
+
+/* ===========================================
+   REMOVE ANIMATIONS
+   =========================================== */
+
+.app-layout-topnav * {
+    animation-duration: 0s !important;
+    transition-duration: 0.15s !important;
+}
+
+/* ===========================================
+   MOBILE MENU - MINIMAL
+   =========================================== */
+
+.mobile-menu {
+    background: var(--min-bg) !important;
+    background-image: none !important;
+}
+
+.mobile-nav-link {
+    color: var(--min-text-secondary) !important;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+    color: var(--min-text) !important;
+    background: var(--min-surface) !important;
+}
+
+/* ===========================================
+   EMPTY STATES - MINIMAL
+   =========================================== */
+
+.app-layout-topnav .empty-state-card,
+.app-layout-topnav .empty-state,
+.app-layout-topnav .analytics-empty-state {
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border) !important;
+}
+
+.app-layout-topnav .empty-icon {
+    background: var(--min-accent-muted) !important;
+    color: var(--min-accent) !important;
+}
+
+/* ===========================================
+   SECTION HEADERS - MINIMAL
+   =========================================== */
+
+.section-header-icon.blue,
+.section-header-icon.emerald,
+.section-header-icon.purple,
+.section-header-icon.amber,
+.section-header-icon.coral {
+    background: var(--min-accent-muted) !important;
+    color: var(--min-accent) !important;
+}
+
+.section-header-icon svg {
+    color: var(--min-accent) !important;
+}
+
+/* ===========================================
+   NOTIFICATION BADGE - MINIMAL
+   =========================================== */
+
+.notification-badge {
+    background: var(--min-danger) !important;
+    font-weight: 500 !important;
+}
+
+/* ===========================================
+   HEALTH BARS - MINIMAL STATUS COLORS
+   =========================================== */
+
+.dot.emerald,
+.membership-dot.emerald {
+    background: var(--min-success) !important;
+}
+
+.dot.amber,
+.membership-dot.amber {
+    background: var(--min-warning) !important;
+}
+
+.dot.coral,
+.membership-dot.coral {
+    background: var(--min-danger) !important;
+}
+
+/* ===========================================
+   GAUGE - MINIMAL
+   =========================================== */
+
+.app-layout-topnav .gauge-container {
+    background: var(--min-surface) !important;
+}
+
+.app-layout-topnav .gauge-value,
+.app-layout-topnav .gauge-label {
+    color: var(--min-text) !important;
+}
