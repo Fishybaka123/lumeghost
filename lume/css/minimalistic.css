@@ -1090,3 +1090,138 @@
     transition: all 0.15s ease;
     margin-right: 4px;
 }
+
+/* ===========================================
+   USER MENU DROPDOWN
+   =========================================== */
+
+.user-menu-container {
+    position: relative;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: var(--min-surface);
+    border: 1px solid var(--min-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.15s ease;
+    z-index: 1000;
+}
+
+.user-menu-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--min-border);
+}
+
+.user-avatar.large {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+}
+
+.user-menu-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-menu-name {
+    font-weight: 600;
+    color: var(--min-text) !important;
+    font-size: 14px;
+}
+
+.user-menu-email {
+    font-size: 12px;
+    color: var(--min-text-muted) !important;
+}
+
+.user-menu-form {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-menu-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.user-menu-field label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--min-text-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.user-menu-field input {
+    padding: 8px 10px;
+    background: var(--min-bg) !important;
+    border: 1px solid var(--min-border) !important;
+    border-radius: 6px;
+    color: var(--min-text) !important;
+    font-size: 13px;
+}
+
+.user-menu-field input:focus {
+    outline: none;
+    border-color: var(--min-accent) !important;
+}
+
+.user-menu-divider {
+    height: 1px;
+    background: var(--min-border);
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: var(--min-text-secondary) !important;
+    text-decoration: none;
+    font-size: 13px;
+    transition: background 0.15s ease;
+    border: none;
+    background: transparent;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+}
+
+.user-menu-item:hover {
+    background: var(--min-surface-hover);
+    color: var(--min-text) !important;
+}
+
+.user-menu-item.logout {
+    color: var(--min-danger) !important;
+    border-radius: 0 0 12px 12px;
+}
+
+.user-menu-item.logout:hover {
+    background: rgba(248, 81, 73, 0.1);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+}

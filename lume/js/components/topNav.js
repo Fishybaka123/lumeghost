@@ -94,13 +94,54 @@ function createTopNav(activePage = 'dashboard') {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
                 </a>
                 
-                <!-- User Avatar -->
-                <button class="user-avatar-btn" onclick="toggleUserMenu()" aria-label="User menu" aria-haspopup="true">
-                    <div class="user-avatar">${user.initials}</div>
-                </button>
+                <!-- User Avatar & Dropdown -->
+                <div class="user-menu-container">
+                    <button class="user-avatar-btn" onclick="toggleUserMenu()" aria-label="User menu" aria-haspopup="true">
+                        <div class="user-avatar">${user.initials}</div>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <div class="user-menu-header">
+                            <div class="user-avatar large">${user.initials}</div>
+                            <div class="user-menu-info">
+                                <span class="user-menu-name">${user.name || 'Admin'}</span>
+                                <span class="user-menu-email">${user.email || 'admin@lume.com'}</span>
+                            </div>
+                        </div>
+                        <div class="user-menu-form">
+                            <div class="user-menu-field">
+                                <label>Name</label>
+                                <input type="text" id="user-name-input" value="${user.name || 'Admin'}" placeholder="Your name">
+                            </div>
+                            <div class="user-menu-field">
+                                <label>Company</label>
+                                <input type="text" id="user-company-input" value="${user.company || 'Lume MedSpa'}" placeholder="Company name">
+                            </div>
+                            <div class="user-menu-field">
+                                <label>Email</label>
+                                <input type="email" id="user-email-input" value="${user.email || 'admin@lume.com'}" placeholder="Email address">
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="saveUserProfile()">Save Changes</button>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <a href="#/settings" class="user-menu-item" onclick="closeUserMenu()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21"/>
+                            </svg>
+                            Settings
+                        </a>
+                        <button class="user-menu-item logout" onclick="logout()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
         
@@ -334,9 +375,54 @@ function goToClient(clientId) {
 }
 
 function toggleUserMenu() {
-    // Placeholder for user dropdown
-    showToast('User menu coming soon', 'info');
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
 }
+
+function closeUserMenu() {
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('active');
+    }
+}
+
+function saveUserProfile() {
+    const name = document.getElementById('user-name-input')?.value || 'Admin';
+    const company = document.getElementById('user-company-input')?.value || 'Lume MedSpa';
+    const email = document.getElementById('user-email-input')?.value || 'admin@lume.com';
+
+    // Generate initials from name
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD';
+
+    const user = { name, company, email, initials };
+    sessionStorage.setItem('lume_user', JSON.stringify(user));
+
+    // Update avatar display
+    const avatars = document.querySelectorAll('.user-avatar');
+    avatars.forEach(avatar => {
+        avatar.textContent = initials;
+    });
+
+    // Update name display
+    const nameDisplay = document.querySelector('.user-menu-name');
+    if (nameDisplay) nameDisplay.textContent = name;
+
+    const emailDisplay = document.querySelector('.user-menu-email');
+    if (emailDisplay) emailDisplay.textContent = email;
+
+    showToast('✓ Profile saved!', 'success');
+    closeUserMenu();
+}
+
+// Close user menu when clicking outside
+document.addEventListener('click', (e) => {
+    const container = document.querySelector('.user-menu-container');
+    if (container && !container.contains(e.target)) {
+        closeUserMenu();
+    }
+});
 
 // Keyboard shortcut for search (Cmd/Ctrl + K)
 document.addEventListener('keydown', (e) => {
@@ -428,6 +514,8 @@ window.closeMobileMenu = closeMobileMenu;
 window.openSearchModal = openSearchModal;
 window.closeSearchModal = closeSearchModal;
 window.toggleUserMenu = toggleUserMenu;
+window.closeUserMenu = closeUserMenu;
+window.saveUserProfile = saveUserProfile;
 window.goBack = goBack;
 window.goForward = goForward;
 window.updateBackButton = updateBackButton;
