@@ -147,15 +147,18 @@ function createDashboardClientRow(client) {
     let suggestionClass = 'text-muted';
     let suggestionIcon = '';
 
-    if (client.healthScore >= 50) {
+    // Suggest action if health is low (< 50) OR if churn risk is medium/high (>= 30)
+    if (client.healthScore >= 50 && client.churnRisk < 30) {
         suggestion = 'No action needed';
         suggestionClass = 'suggestion-good';
         suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>`;
     } else {
         suggestionClass = 'suggestion-action';
         // Generate specific suggestion using logic similar to NudgeGenerator
-        if (client.churnRisk >= 60) {
+        if (client.churnRisk >= 50) {
             suggestion = 'Send re-engagement text';
+        } else if (client.churnRisk >= 30) {
+            suggestion = 'Offer loyalty discount';
         } else if (client.remainingSessions <= 2) {
             suggestion = 'Suggest package renewal';
         } else if (client.expireDate && new Date(client.expireDate) < new Date()) {
@@ -163,6 +166,7 @@ function createDashboardClientRow(client) {
         } else if (client.lastVisit && (new Date() - new Date(client.lastVisit)) / (1000 * 60 * 60 * 24) > 60) {
             suggestion = 'Reach out - absent >60 days';
         } else {
+            // Fallback for low health score but no specific trigger
             suggestion = 'Review client profile';
         }
         suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
