@@ -1225,3 +1225,27 @@
     padding: 8px 16px;
     font-size: 13px;
 }
+
+/* ===========================================
+   AI SUGGESTIONS
+   =========================================== */
+
+.ai-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.suggestion-good {
+    color: var(--min-success);
+}
+
+.suggestion-action {
+    color: var(--min-primary);
+}
+
+.text-muted {
+    color: var(--min-text-muted);
+}

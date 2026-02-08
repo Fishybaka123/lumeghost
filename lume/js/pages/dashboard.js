@@ -15,10 +15,10 @@ function renderDashboardPage() {
     const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
     const hasClients = clients && clients.length > 0;
 
-    // Get at-risk clients for the quick view
-    const atRiskClients = hasClients
-        ? clients.filter(c => c.churnRisk >= 50).sort((a, b) => b.churnRisk - a.churnRisk).slice(0, 5)
-        : [];
+    // Get all clients (limited to 50 for performance if needed, but user asked for all)
+    // We'll show top 20 by default sorted by risk, or just all. User said "see all clients".
+    // Let's truncate to 100 to avoid performance issues if there are thousands, but for now just all.
+    const displayClients = hasClients ? clients.sort((a, b) => b.churnRisk - a.churnRisk) : [];
 
     return `
         <div class="app-layout-topnav">
@@ -59,10 +59,10 @@ function renderDashboardPage() {
                         ${createMetricFromData('healthScore', METRICS.healthScore)}
                     </div>
                     
-                    <!-- At-Risk Clients Quick View -->
+                    <!-- All Clients Quick View -->
                     <div class="quick-view-section">
                         <div class="quick-view-header">
-                            <h3 class="quick-view-title">⚠️ At-Risk Clients</h3>
+                            <h3 class="quick-view-title">All Clients</h3>
                             <div class="quick-view-filters">
                                 <select class="filter-select" id="treatment-filter">
                                     <option value="">All Treatments</option>
@@ -71,8 +71,9 @@ function renderDashboardPage() {
                                     <option value="laser">Laser Treatments</option>
                                 </select>
                                 <select class="filter-select" id="risk-filter" onchange="dashboardFilterByRisk(this.value)">
-                                    <option value="high">High Risk</option>
                                     <option value="all">All Risk Levels</option>
+                                    <option value="high">High Risk</option>
+                                    <option value="low">Low Risk</option>
                                 </select>
                             </div>
                         </div>
@@ -97,13 +98,13 @@ function renderDashboardPage() {
                                             <th>Churn Risk</th>
                                             <th>Last Visit</th>
                                             <th>Membership</th>
-                                            <th>Actions</th>
+                                            <th>AI Suggestion</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dashboard-clients-body">
-                                        ${atRiskClients.length > 0
-                ? atRiskClients.map(client => createClientRow(client)).join('')
-                : '<tr><td colspan="6" class="empty-table-message">No at-risk clients found 🎉</td></tr>'
+                                        ${displayClients.length > 0
+                ? displayClients.map(client => createDashboardClientRow(client)).join('')
+                : '<tr><td colspan="6" class="empty-table-message">No clients found</td></tr>'
             }
                                     </tbody>
                                 </table>
@@ -137,9 +138,92 @@ function renderDashboardPage() {
     `;
 }
 
+function createDashboardClientRow(client) {
+    const healthClass = getHealthScoreClass(client.healthScore);
+    const churnClass = getChurnRiskClass(client.churnRisk);
+
+    // AI Suggestion Logic
+    let suggestion = '';
+    let suggestionClass = 'text-muted';
+    let suggestionIcon = '';
+
+    if (client.healthScore >= 50) {
+        suggestion = 'No action needed';
+        suggestionClass = 'suggestion-good';
+        suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else {
+        suggestionClass = 'suggestion-action';
+        // Generate specific suggestion using logic similar to NudgeGenerator
+        if (client.churnRisk >= 60) {
+            suggestion = 'Send re-engagement text';
+        } else if (client.remainingSessions <= 2) {
+            suggestion = 'Suggest package renewal';
+        } else if (client.expireDate && new Date(client.expireDate) < new Date()) {
+            suggestion = 'Contact for membership renewal';
+        } else if (client.lastVisit && (new Date() - new Date(client.lastVisit)) / (1000 * 60 * 60 * 24) > 60) {
+            suggestion = 'Reach out - absent >60 days';
+        } else {
+            suggestion = 'Review client profile';
+        }
+        suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    }
+
+    return `
+        <tr data-client-id="${client.id}" onclick="navigateTo('/clients/${client.id}')">
+            <td>
+                <div class="client-cell">
+                    <div class="client-avatar" style="background-color: ${client.avatarColor}">
+                        ${getClientInitials(client)}
+                    </div>
+                    <div class="client-info">
+                        <div class="client-name">${getClientFullName(client)}</div>
+                        <div class="client-email">${client.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="health-score ${healthClass}">
+                    <span>${client.healthScore}</span>
+                    <div class="health-score-bar">
+                        <div class="health-score-fill" style="width: ${client.healthScore}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="churn-badge ${churnClass}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                    </svg>
+                    ${client.churnRisk}% ${client.churnRisk >= 60 ? 'High Risk' : client.churnRisk >= 30 ? 'Medium' : 'Low'}
+                </span>
+            </td>
+            <td>
+                <span class="text-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 4px; color: var(--gray-400);">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    ${client.lastVisit ? getRelativeTime(client.lastVisit) : 'No visits yet'}
+                </span>
+            </td>
+            <td>
+                <span class="membership-badge ${getMembershipBadgeClass(client.membershipType)}">
+                    ${getMembershipLabel(client.membershipType)}
+                </span>
+            </td>
+            <td>
+                <div class="ai-suggestion ${suggestionClass}">
+                    ${suggestionIcon}
+                    ${suggestion}
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
 function dashboardFilterClients(searchTerm) {
     const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
-    const filtered = clients.filter(c => c.churnRisk >= 50).filter(c => {
+    const filtered = clients.filter(c => {
         const fullName = getClientFullName(c).toLowerCase();
         const email = (c.email || '').toLowerCase();
         const term = searchTerm.toLowerCase();
@@ -149,23 +233,28 @@ function dashboardFilterClients(searchTerm) {
     const tbody = document.getElementById('dashboard-clients-body');
     if (tbody) {
         tbody.innerHTML = filtered.length > 0
-            ? filtered.map(client => createClientRow(client)).join('')
+            ? filtered.map(client => createDashboardClientRow(client)).join('')
             : '<tr><td colspan="6" class="empty-table-message">No matching clients found</td></tr>';
     }
 }
 
 function dashboardFilterByRisk(risk) {
     const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
-    let filtered = risk === 'all'
-        ? clients
-        : clients.filter(c => c.churnRisk >= 50);
+    let filtered = clients;
 
-    filtered = filtered.sort((a, b) => b.churnRisk - a.churnRisk).slice(0, 10);
+    if (risk === 'high') {
+        filtered = clients.filter(c => c.churnRisk >= 50);
+    } else if (risk === 'low') {
+        filtered = clients.filter(c => c.churnRisk < 50);
+    }
+    // 'all' returns everything
+
+    filtered = filtered.sort((a, b) => b.churnRisk - a.churnRisk);
 
     const tbody = document.getElementById('dashboard-clients-body');
     if (tbody) {
         tbody.innerHTML = filtered.length > 0
-            ? filtered.map(client => createClientRow(client)).join('')
+            ? filtered.map(client => createDashboardClientRow(client)).join('')
             : '<tr><td colspan="6" class="empty-table-message">No clients in this category</td></tr>';
     }
 }
@@ -197,3 +286,4 @@ function exportReport() {
         showToast('✅ Report ready for download!', 'success');
     }, 1500);
 }
+
