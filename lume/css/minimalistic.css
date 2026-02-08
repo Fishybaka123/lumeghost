@@ -25,6 +25,7 @@
     /* Borders - Minimal */
     --min-border: rgba(255, 255, 255, 0.08);
     --min-border-subtle: rgba(255, 255, 255, 0.04);
+    --min-border-strong: rgba(255, 255, 255, 0.2);
 
     /* Status Colors */
     --min-success: #3FB950;
@@ -212,15 +213,15 @@
 }
 
 .app-layout-topnav .btn-secondary {
-    background: transparent !important;
-    border: 1px solid var(--min-border) !important;
+    background: var(--min-surface) !important;
+    border: 1px solid var(--min-border-strong) !important;
     border-radius: 6px !important;
     color: var(--min-text) !important;
 }
 
 .app-layout-topnav .btn-secondary:hover {
     background: var(--min-surface-hover) !important;
-    border-color: var(--min-border) !important;
+    border-color: var(--min-text-muted) !important;
 }
 
 /* ===========================================
@@ -596,6 +597,7 @@
     --min-text-muted: #8C959F;
     --min-border: rgba(0, 0, 0, 0.1);
     --min-border-subtle: rgba(0, 0, 0, 0.05);
+    --min-border-strong: rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="light"] .top-nav {
