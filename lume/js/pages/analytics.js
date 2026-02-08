@@ -91,7 +91,7 @@ function renderAnalyticsContent(clients) {
             </div>
             
             <div class="insights-cards">
-                ${renderNotificationsAndInsights(stats, clients)}
+                ${renderNotificationsAndInsights(stats, clients, 3)}
             </div>
         </section>
 
@@ -393,29 +393,67 @@ function renderExpiringClients(stats) {
     `;
 }
 
-function renderNotificationsAndInsights(stats, clients) {
+function renderNotificationsAndInsights(stats, clients, limit = null) {
+    const items = getAllNotifications(stats, clients);
+
+    // Empty State
+    if (items.length === 0) {
+        return `
+            <div class="insight-card success">
+                <span class="insight-icon">🎉</span>
+                <div class="insight-content">
+                    <h4>All Caught Up</h4>
+                    <p>No immediate alerts or insights. Great job!</p>
+                </div>
+            </div>
+        `;
+    }
+
+    const displayItems = limit ? items.slice(0, limit) : items;
+    const hasMore = limit && items.length > limit;
+
+    let html = displayItems.map(item => renderNotificationItem(item)).join('');
+
+    if (hasMore) {
+        html += `
+            <div class="show-more-container">
+                <button class="btn btn-secondary btn-sm" onclick="openNotificationsModal()">
+                    Show All (${items.length})
+                </button>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+function getAllNotifications(stats, clients) {
     const items = [];
 
     // 1. Critical Alerts (High Priority)
 
     // Low Health
-    const lowHealth = clients.filter(c => c.healthScore < 40).length;
-    if (lowHealth > 0) {
+    const lowHealth = clients.filter(c => c.healthScore < 40);
+    if (lowHealth.length > 0) {
         items.push({
-            type: 'danger', // Uses 'danger' style (Red)
+            type: 'danger',
             icon: '❤️',
-            title: `${lowHealth} Clients Need Attention`,
-            message: 'Health score below 40. Immediate action recommended.'
+            title: `${lowHealth.length} Clients Need Attention`,
+            message: 'Health score below 40. Immediate action recommended.',
+            actionLabel: 'View Clients',
+            actionFn: "navigateTo('/clients')"
         });
     }
 
-    // At Risk (High Churn)
+    // At Risk
     if (stats.atRisk > 0) {
         items.push({
             type: 'warning',
             icon: '⚠️',
             title: `${stats.atRisk} Clients at High Risk`,
-            message: 'High churn probability. Consider personal outreach.'
+            message: 'High churn probability. Consider personal outreach.',
+            actionLabel: 'Send Nudge',
+            actionFn: "showToast('🚀 AI Nudge campaign started for at-risk clients', 'success')"
         });
     }
 
@@ -424,54 +462,97 @@ function renderNotificationsAndInsights(stats, clients) {
     // Expiring Soon
     if (stats.expiringSoon > 0) {
         items.push({
-            type: 'info', // Blue
+            type: 'info',
             icon: '📅',
             title: `${stats.expiringSoon} Renewals Due`,
-            message: 'Memberships expiring within 14 days.'
+            message: 'Memberships expiring within 14 days.',
+            actionLabel: 'Send Reminder',
+            actionFn: "showToast('✉️ Renewal reminders queued for sending', 'success')"
         });
     }
 
-    // 3. AI Opportunities (Positive)
+    // 3. AI Opportunities
 
     // Membership Opportunity
     if (stats.none > stats.vip + stats.premium) {
         items.push({
-            type: 'opportunity', // Purple
+            type: 'opportunity',
             icon: '💡',
             title: 'Membership Opportunity',
-            message: 'Majority of clients have no membership. Launch a conversion campaign.'
+            message: 'Majority of clients have no membership.',
+            actionLabel: 'Create Offer',
+            actionFn: "showToast('✨ Membership conversion offer created', 'success')"
         });
     }
 
     // Strong Retention
     if (stats.healthyPercent >= 60) {
         items.push({
-            type: 'success', // Green
+            type: 'success',
             icon: '✅',
             title: 'Strong Retention',
-            message: `${stats.healthyPercent}% of clients are healthy. Strategy is effective.`
+            message: `${stats.healthyPercent}% of clients are healthy.`,
+            actionLabel: 'View Report',
+            actionFn: "showToast('📊 Retention report generated', 'info')"
         });
     }
 
-    // Empty State
-    if (items.length === 0) {
-        items.push({
-            type: 'success',
-            icon: '🎉',
-            title: 'All Caught Up',
-            message: 'No immediate alerts or insights. Great job!'
-        });
-    }
+    return items;
+}
 
-    return items.map(item => `
+function renderNotificationItem(item) {
+    return `
         <div class="insight-card ${item.type}">
             <span class="insight-icon">${item.icon}</span>
             <div class="insight-content">
-                <h4>${item.title}</h4>
+                <div class="insight-header">
+                    <h4>${item.title}</h4>
+                    <span class="insight-time">Today</span>
+                </div>
                 <p>${item.message}</p>
+                ${item.actionLabel ? `
+                    <button class="btn btn-sm btn-outline insight-action-btn" onclick="${item.actionFn}">
+                        ${item.actionLabel}
+                    </button>
+                ` : ''}
             </div>
         </div>
-    `).join('');
+    `;
+}
+
+function openNotificationsModal() {
+    // Get data again (or cache it, but getting fresh is safer for display)
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    const stats = calculateAnalyticsStats(clients);
+    const allItems = getAllNotifications(stats, clients);
+
+    const modalHtml = `
+        <div class="modal" id="notifications-modal">
+            <div class="modal-backdrop" onclick="closeNotificationsModal()"></div>
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>Notifications & Insights</h3>
+                    <button class="modal-close" onclick="closeNotificationsModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="insights-cards">
+                        ${allItems.map(item => renderNotificationItem(item)).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing if any
+    const existing = document.getElementById('notifications-modal');
+    if (existing) existing.remove();
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeNotificationsModal() {
+    const modal = document.getElementById('notifications-modal');
+    if (modal) modal.remove();
 }
 
 function formatNumber(num) {

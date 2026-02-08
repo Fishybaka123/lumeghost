@@ -555,6 +555,33 @@
     line-height: 1.5;
 }
 
+/* Show More Button */
+.show-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-4);
+    grid-column: 1 / -1;
+}
+
+/* Insight Action Button */
+.insight-action-btn {
+    margin-top: var(--spacing-3);
+    width: 100%;
+}
+
+.insight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-1);
+}
+
+.insight-time {
+    font-size: 11px;
+    color: var(--gray-400);
+    white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .analytics-metrics-grid {
