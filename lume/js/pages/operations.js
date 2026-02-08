@@ -12,6 +12,38 @@ function renderOperationsPage() {
             ${createTopNav('operations')}
             
             <main class="main-content" id="main-content">
+                <div class="page-content center-content" style="display: flex; align-items: center; justify-content: center; height: calc(100vh - 80px);">
+                    <div class="empty-state-card" style="max-width: 500px; border: none; box-shadow: var(--shadow-lg);">
+                        <div class="empty-state-icon" style="background: var(--primary-50); color: var(--primary);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                        </div>
+                        <h3>Operations Paused</h3>
+                        <p>This module is currently undergoing scheduled maintenance and upgrades. All data is securely stored.</p>
+                        <button class="btn btn-primary" onclick="navigateTo('/dashboard')">
+                            Return to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    `;
+}
+
+/* 
+// ORIGINAL OPERATIONS PAGE CODE - PRESERVED FOR LATER RESTORATION
+function renderOperationsPage_ORIGINAL() {
+    const user = AuthService ? AuthService.getCurrentUser() :
+        JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
+
+    return `
+        <div class="app-layout-topnav">
+            ${createTopNav('operations')}
+            
+            <main class="main-content" id="main-content">
                 <div class="page-content operations-page">
                     <!-- Page Header -->
                     <div class="page-header">
@@ -189,6 +221,7 @@ function renderOperationsPage() {
         </div>
     `;
 }
+*/
 
 // Helper Functions
 function formatTodayDate() {
