@@ -9,12 +9,9 @@ let selectedClientId = null;
 function renderCommunicationsPage() {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
-    // Initialize communication service and generate demo data if empty
+    // Initialize communication service
     if (CommunicationService) {
-        const messages = CommunicationService.getAll();
-        if (messages.length === 0) {
-            CommunicationService.generateDemoData();
-        }
+        // Demo data generation removed per user request (Clear history)
     }
 
     const stats = CommunicationService ? CommunicationService.getStats() : { total: 0, sms: 0, email: 0, unread: 0 };

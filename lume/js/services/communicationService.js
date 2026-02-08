@@ -4,7 +4,7 @@
 // ===========================================
 
 const CommunicationService = {
-    STORAGE_KEY: 'lume_communications',
+    STORAGE_KEY: 'lume_communications_v2',
 
     /**
      * Message types
