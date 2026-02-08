@@ -653,6 +653,23 @@ html[data-theme="light"] .app-layout-topnav span {
     color: var(--min-text-secondary) !important;
 }
 
+/* Specific Page Title Overrides */
+html[data-theme="light"] .page-title-section h1,
+html[data-theme="light"] .page-title-section p,
+html[data-theme="light"] .quick-view-title,
+html[data-theme="light"] .metric-label,
+html[data-theme="light"] .metric-value,
+html[data-theme="light"] .section-title,
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3 {
+    color: #000000 !important;
+}
+
+html[data-theme="light"] .page-title-section p {
+    color: #333333 !important;
+}
+
 
 
 
