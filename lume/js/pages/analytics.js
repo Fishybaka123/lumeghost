@@ -20,7 +20,7 @@ function renderAnalyticsPage() {
                     <div class="page-header">
                         <div class="page-title-section">
                             <h1>📊 Analytics</h1>
-                            <p>Track performance, monitor retention, and discover growth opportunities</p>
+                            <p>Track performance, monitor retention, and discovery growth opportunities</p>
                         </div>
                         <div class="page-actions">
                             <select class="filter-select" id="analytics-timeframe" onchange="updateAnalyticsTimeframe(this.value)">
@@ -75,6 +75,26 @@ function renderAnalyticsContent(clients) {
     const stats = calculateAnalyticsStats(clients);
 
     return `
+        <!-- Notifications & Insights Section (Moved to Top) -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <div class="section-header-icon coral">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Notifications & AI Insights</h2>
+                    <p>Recent alerts, updates, and smart recommendations</p>
+                </div>
+            </div>
+            
+            <div class="insights-cards">
+                ${renderNotificationsAndInsights(stats, clients)}
+            </div>
+        </section>
+
         <!-- Key Metrics Section -->
         <section class="analytics-section">
             <div class="section-header">
@@ -167,45 +187,6 @@ function renderAnalyticsContent(clients) {
                         ${renderExpiringClients(stats)}
                     </div>
                 </div>
-            </div>
-        </section>
-        
-        <!-- AI Insights Section -->
-        <section class="analytics-section">
-            <div class="section-header">
-                <div class="section-header-icon amber">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2>AI Insights</h2>
-                    <p>Smart recommendations based on your data</p>
-                </div>
-            </div>
-            
-            <div class="insights-cards">
-                ${renderAIInsightsCards(stats)}
-            </div>
-        </section>
-        
-        <!-- Notifications Section -->
-        <section class="analytics-section notifications-section">
-            <div class="section-header">
-                <div class="section-header-icon coral">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2>Notifications</h2>
-                    <p>Recent alerts and updates</p>
-                </div>
-            </div>
-            
-            <div class="notifications-compact">
-                ${renderNotifications()}
             </div>
         </section>
     `;
@@ -412,61 +393,82 @@ function renderExpiringClients(stats) {
     `;
 }
 
-function renderAIInsightsCards(stats) {
-    const insights = [];
+function renderNotificationsAndInsights(stats, clients) {
+    const items = [];
 
-    // Generate dynamic insights based on data
-    if (stats.atRiskPercent >= 20) {
-        insights.push({
+    // 1. Critical Alerts (High Priority)
+
+    // Low Health
+    const lowHealth = clients.filter(c => c.healthScore < 40).length;
+    if (lowHealth > 0) {
+        items.push({
+            type: 'danger', // Uses 'danger' style (Red)
+            icon: '❤️',
+            title: `${lowHealth} Clients Need Attention`,
+            message: 'Health score below 40. Immediate action recommended.'
+        });
+    }
+
+    // At Risk (High Churn)
+    if (stats.atRisk > 0) {
+        items.push({
             type: 'warning',
             icon: '⚠️',
-            title: 'High Churn Alert',
-            message: `${stats.atRisk} clients are at high risk of churning. Consider sending personalized nudges to re-engage them.`
+            title: `${stats.atRisk} Clients at High Risk`,
+            message: 'High churn probability. Consider personal outreach.'
         });
     }
 
-    if (stats.healthyPercent >= 60) {
-        insights.push({
-            type: 'success',
-            icon: '✅',
-            title: 'Strong Retention',
-            message: `${stats.healthyPercent}% of your clients are healthy. Keep up the excellent engagement!`
-        });
-    }
+    // 2. Operational / Timely
 
+    // Expiring Soon
     if (stats.expiringSoon > 0) {
-        insights.push({
-            type: 'info',
+        items.push({
+            type: 'info', // Blue
             icon: '📅',
-            title: 'Renewals Due',
-            message: `${stats.expiringSoon} memberships expire soon. Reach out to encourage renewals.`
+            title: `${stats.expiringSoon} Renewals Due`,
+            message: 'Memberships expiring within 14 days.'
         });
     }
 
+    // 3. AI Opportunities (Positive)
+
+    // Membership Opportunity
     if (stats.none > stats.vip + stats.premium) {
-        insights.push({
-            type: 'opportunity',
+        items.push({
+            type: 'opportunity', // Purple
             icon: '💡',
             title: 'Membership Opportunity',
-            message: 'Many clients don\'t have a membership. Consider creating a campaign to convert them.'
+            message: 'Majority of clients have no membership. Launch a conversion campaign.'
         });
     }
 
-    if (insights.length === 0) {
-        insights.push({
+    // Strong Retention
+    if (stats.healthyPercent >= 60) {
+        items.push({
+            type: 'success', // Green
+            icon: '✅',
+            title: 'Strong Retention',
+            message: `${stats.healthyPercent}% of clients are healthy. Strategy is effective.`
+        });
+    }
+
+    // Empty State
+    if (items.length === 0) {
+        items.push({
             type: 'success',
             icon: '🎉',
-            title: 'Looking Great!',
-            message: 'Your client base is healthy. Continue your current engagement strategy.'
+            title: 'All Caught Up',
+            message: 'No immediate alerts or insights. Great job!'
         });
     }
 
-    return insights.map(insight => `
-        <div class="insight-card ${insight.type}">
-            <span class="insight-icon">${insight.icon}</span>
+    return items.map(item => `
+        <div class="insight-card ${item.type}">
+            <span class="insight-icon">${item.icon}</span>
             <div class="insight-content">
-                <h4>${insight.title}</h4>
-                <p>${insight.message}</p>
+                <h4>${item.title}</h4>
+                <p>${item.message}</p>
             </div>
         </div>
     `).join('');
@@ -489,65 +491,4 @@ function exportAnalyticsReport() {
     }, 1500);
 }
 
-function renderNotifications() {
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
-    const notifications = [];
 
-    // Generate notifications based on client data
-    const atRiskClients = clients.filter(c => c.churnRisk >= 60);
-    if (atRiskClients.length > 0) {
-        notifications.push({
-            type: 'warning',
-            icon: '⚠️',
-            title: `${atRiskClients.length} clients at risk`,
-            desc: 'Consider sending re-engagement messages',
-            time: 'Now'
-        });
-    }
-
-    const expiringClients = clients.filter(c => {
-        if (!c.expireDate) return false;
-        const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
-        return days <= 7 && days > 0;
-    });
-    if (expiringClients.length > 0) {
-        notifications.push({
-            type: 'info',
-            icon: '📅',
-            title: `${expiringClients.length} memberships expiring`,
-            desc: 'Within the next 7 days',
-            time: 'Today'
-        });
-    }
-
-    const lowHealth = clients.filter(c => c.healthScore < 40).length;
-    if (lowHealth > 0) {
-        notifications.push({
-            type: 'danger',
-            icon: '❤️',
-            title: `${lowHealth} clients need attention`,
-            desc: 'Health score below 40',
-            time: 'Now'
-        });
-    }
-
-    if (notifications.length === 0) {
-        return `
-            <div class="notification-empty">
-                <span>✓</span>
-                <p>All caught up! No new notifications.</p>
-            </div>
-        `;
-    }
-
-    return notifications.slice(0, 4).map(n => `
-        <div class="notification-item ${n.type}">
-            <span class="notification-icon">${n.icon}</span>
-            <div class="notification-content">
-                <div class="notification-title">${n.title}</div>
-                <div class="notification-desc">${n.desc}</div>
-            </div>
-            <span class="notification-time">${n.time}</span>
-        </div>
-    `).join('');
-}
