@@ -78,6 +78,11 @@ function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
 
+    // Limit to 3 notifications
+    while (container.children.length >= 3) {
+        container.removeChild(container.firstChild);
+    }
+
     container.appendChild(toast);
 
     // Add styles if not present
