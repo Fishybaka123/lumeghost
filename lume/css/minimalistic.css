@@ -606,9 +606,9 @@ html[data-theme="light"] {
     --min-surface-hover: #F0F2F5;
     --min-accent: #0969DA;
     --min-accent-muted: rgba(9, 105, 218, 0.1);
-    --min-text: #1F2328;
-    --min-text-secondary: #656D76;
-    --min-text-muted: #8C959F;
+    --min-text: #000000;
+    --min-text-secondary: #333333;
+    --min-text-muted: #666666;
     --min-border: rgba(0, 0, 0, 0.1);
     --min-border-subtle: rgba(0, 0, 0, 0.05);
     --min-border-strong: rgba(0, 0, 0, 0.25);

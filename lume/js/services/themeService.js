@@ -35,7 +35,7 @@ const ThemeService = {
      * Get the currently applied theme
      */
     getAppliedTheme() {
-        return this.THEMES.DARK;
+        return this.THEMES.LIGHT;
     },
 
     /**
@@ -43,8 +43,8 @@ const ThemeService = {
      * @param {string} theme - 'light', 'dark', or 'system'
      */
     setTheme(theme) {
-        // Forced dark mode
-        const forced = this.THEMES.DARK;
+        // Forced light mode
+        const forced = this.THEMES.LIGHT;
         this.currentTheme = forced;
         localStorage.setItem(this.THEME_KEY, forced);
         document.documentElement.setAttribute('data-theme', forced);
@@ -55,16 +55,16 @@ const ThemeService = {
      */
     toggle() {
         // Disabled for now
-        showToast('Light mode is currently disabled', 'info');
-        return this.THEMES.DARK;
+        showToast('Theme switching is currently disabled', 'info');
+        return this.THEMES.LIGHT;
     },
 
     /**
      * Apply theme to document
      */
     applyTheme(theme) {
-        // Force dark
-        document.documentElement.setAttribute('data-theme', 'dark');
+        // Force light
+        document.documentElement.setAttribute('data-theme', 'light');
     },
 
     /**
