@@ -1395,3 +1395,73 @@ html[data-theme="light"] .nav-icon-btn {
 .text-muted {
     color: var(--min-text-muted);
 }
+
+/* ===========================================
+   FINAL OVERRIDES - MUST BE LAST
+   =========================================== */
+
+/* DARK NAVY ACCENTS & WHITE TEXT AREAS (User Request) */
+html[data-theme="light"] .quick-view-section,
+html[data-theme="light"] .metric-card,
+html[data-theme="light"] .sidebar,
+html[data-theme="light"] .top-nav {
+    background-color: #0A1929 !important;
+    /* Dark Navy */
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Force White Text inside Dark Navy Containers */
+html[data-theme="light"] .quick-view-section h1,
+html[data-theme="light"] .quick-view-section h2,
+html[data-theme="light"] .quick-view-section h3,
+html[data-theme="light"] .quick-view-section p,
+html[data-theme="light"] .quick-view-section span,
+html[data-theme="light"] .quick-view-section div,
+html[data-theme="light"] .quick-view-title,
+html[data-theme="light"] .client-name,
+html[data-theme="light"] .metric-card .metric-value,
+html[data-theme="light"] .metric-card .metric-label,
+html[data-theme="light"] .sidebar .nav-item,
+html[data-theme="light"] .sidebar .sidebar-brand,
+html[data-theme="light"] .top-nav h1,
+html[data-theme="light"] .top-nav h2,
+html[data-theme="light"] .top-nav h3,
+html[data-theme="light"] .top-nav p,
+html[data-theme="light"] .top-nav span,
+html[data-theme="light"] .top-nav div,
+html[data-theme="light"] .top-nav .nav-link,
+html[data-theme="light"] .top-nav .nav-icon-btn {
+    color: #FFFFFF !important;
+}
+
+/* Subtext in Dark Navy Containers (Light Gray) */
+html[data-theme="light"] .quick-view-section .client-email,
+html[data-theme="light"] .metric-card .metric-subtitle,
+html[data-theme="light"] .top-nav .user-role {
+    color: #B0B8C4 !important;
+}
+
+/* Fix Input/Select backgrounds in Dark Sections to be readable */
+html[data-theme="light"] .quick-view-section input,
+html[data-theme="light"] .quick-view-section select,
+html[data-theme="light"] .top-nav input {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html[data-theme="light"] .top-nav input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Fix Table Headers in Dark Section */
+html[data-theme="light"] .clients-table th {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #B0B8C4 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme="light"] .clients-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
