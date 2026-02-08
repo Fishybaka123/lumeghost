@@ -629,15 +629,41 @@ h6 {
     color: var(--min-text) !important;
 }
 
+/* Force light theme overrides with higher specificity */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6,
+html[data-theme="light"] .app-layout-topnav h1,
+html[data-theme="light"] .app-layout-topnav h2,
+html[data-theme="light"] .app-layout-topnav h3,
+html[data-theme="light"] .app-layout-topnav h4,
+html[data-theme="light"] .app-layout-topnav h5,
+html[data-theme="light"] .app-layout-topnav h6 {
+    color: var(--min-text) !important;
+}
+
+html[data-theme="light"] p,
+html[data-theme="light"] span,
+html[data-theme="light"] li,
+html[data-theme="light"] .app-layout-topnav p,
+html[data-theme="light"] .app-layout-topnav span {
+    color: var(--min-text-secondary) !important;
+}
 
 
-[data-theme="light"] .top-nav {
+
+
+
+html[data-theme="light"] .top-nav {
     background: #FFFFFF !important;
     border-bottom-color: rgba(0, 0, 0, 0.1) !important;
 }
 
-[data-theme="light"] .nav-link,
-[data-theme="light"] .nav-icon-btn {
+html[data-theme="light"] .nav-link,
+html[data-theme="light"] .nav-icon-btn {
     color: #656D76 !important;
 }
 
