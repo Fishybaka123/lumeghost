@@ -17,30 +17,25 @@ const ThemeService = {
      * Initialize theme service
      */
     init() {
-        // Get saved preference or default to system
-        this.currentTheme = localStorage.getItem(this.THEME_KEY) || this.THEMES.SYSTEM;
+        // PER USER REQUEST: Force Dark Mode only for now
+        this.currentTheme = this.THEMES.DARK;
 
-        // Setup system preference listener
+        // Remove existing theme attributes and force dark
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem(this.THEME_KEY, 'dark');
+
+        // Setup system preference listener (inactive for now)
         this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this.mediaQuery.addEventListener('change', (e) => this.handleSystemChange(e));
+        // this.mediaQuery.addEventListener('change', (e) => this.handleSystemChange(e));
 
-        // Apply initial theme
-        this.applyTheme(this.currentTheme);
-
-        // Announce to screen readers
-        this.announceTheme();
-
-        console.log('🎨 Theme Service initialized:', this.getAppliedTheme());
+        console.log('🌑 Theme Service initialized: Forced Dark Mode');
     },
 
     /**
      * Get the currently applied theme
      */
     getAppliedTheme() {
-        if (this.currentTheme === this.THEMES.SYSTEM) {
-            return this.mediaQuery?.matches ? this.THEMES.DARK : this.THEMES.LIGHT;
-        }
-        return this.currentTheme;
+        return this.THEMES.DARK;
     },
 
     /**
@@ -48,61 +43,35 @@ const ThemeService = {
      * @param {string} theme - 'light', 'dark', or 'system'
      */
     setTheme(theme) {
-        if (!Object.values(this.THEMES).includes(theme)) {
-            console.warn('Invalid theme:', theme);
-            return;
-        }
-
-        this.currentTheme = theme;
-        localStorage.setItem(this.THEME_KEY, theme);
-        this.applyTheme(theme);
-        this.announceTheme();
-
-        // Dispatch custom event for other components
-        window.dispatchEvent(new CustomEvent('themechange', {
-            detail: { theme, applied: this.getAppliedTheme() }
-        }));
+        // Forced dark mode
+        const forced = this.THEMES.DARK;
+        this.currentTheme = forced;
+        localStorage.setItem(this.THEME_KEY, forced);
+        document.documentElement.setAttribute('data-theme', forced);
     },
 
     /**
      * Toggle between light and dark
      */
     toggle() {
-        const applied = this.getAppliedTheme();
-        const newTheme = applied === this.THEMES.DARK ? this.THEMES.LIGHT : this.THEMES.DARK;
-        this.setTheme(newTheme);
-        return newTheme;
+        // Disabled for now
+        showToast('Light mode is currently disabled', 'info');
+        return this.THEMES.DARK;
     },
 
     /**
      * Apply theme to document
      */
     applyTheme(theme) {
-        const root = document.documentElement;
-
-        // Remove existing theme attributes
-        root.removeAttribute('data-theme');
-
-        if (theme === this.THEMES.SYSTEM) {
-            // Let CSS media query handle it
-            return;
-        }
-
-        // Set explicit theme
-        root.setAttribute('data-theme', theme);
+        // Force dark
+        document.documentElement.setAttribute('data-theme', 'dark');
     },
 
     /**
      * Handle system preference change
      */
     handleSystemChange(e) {
-        if (this.currentTheme === this.THEMES.SYSTEM) {
-            // Re-apply to trigger any JS-based theming
-            this.announceTheme();
-            window.dispatchEvent(new CustomEvent('themechange', {
-                detail: { theme: 'system', applied: e.matches ? 'dark' : 'light' }
-            }));
-        }
+        // Ignored
     },
 
     /**
