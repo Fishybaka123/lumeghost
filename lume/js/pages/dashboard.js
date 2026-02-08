@@ -28,8 +28,8 @@ function renderDashboardPage() {
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">
-                            <h1>Welcome back! 👋</h1>
-                            <p>Here's what's happening with your clients today</p>
+                            <h1 style="color: #000000 !important; text-emphasis-color: #000000 !important; -webkit-text-fill-color: #000000 !important;">Welcome back! 👋</h1>
+                            <p style="color: #333333 !important;">Here's what's happening with your clients today</p>
                         </div>
                         <div class="page-actions">
                             <button class="btn btn-secondary" onclick="refreshDashboard()">

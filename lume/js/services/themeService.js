@@ -17,18 +17,17 @@ const ThemeService = {
      * Initialize theme service
      */
     init() {
-        // PER USER REQUEST: Force Dark Mode only for now
-        this.currentTheme = this.THEMES.DARK;
+        // PER USER REQUEST: Force Light Mode only
+        this.currentTheme = this.THEMES.LIGHT;
 
-        // Remove existing theme attributes and force dark
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem(this.THEME_KEY, 'dark');
+        // Remove existing theme attributes and force light
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem(this.THEME_KEY, 'light');
 
         // Setup system preference listener (inactive for now)
         this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        // this.mediaQuery.addEventListener('change', (e) => this.handleSystemChange(e));
 
-        console.log('🌑 Theme Service initialized: Forced Dark Mode');
+        console.log('☀️ Theme Service initialized: Forced Light Mode');
     },
 
     /**
