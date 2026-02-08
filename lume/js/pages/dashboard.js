@@ -18,6 +18,22 @@ function renderDashboardPage() {
     // Get all clients (limited to 50 for performance if needed, but user asked for all)
     // We'll show top 20 by default sorted by risk, or just all. User said "see all clients".
     // Let's truncate to 100 to avoid performance issues if there are thousands, but for now just all.
+    // Enrich clients with real-time analysis to ensure sync with profile page
+    if (hasClients && typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            // Return a new object with updated metrics to avoid mutating store directly if not desired
+            // or just for display purposes here
+            return {
+                ...c,
+                healthScore: analysis.healthScore,
+                churnRisk: analysis.churnRisk,
+                // Also update other potential derivative metrics if needed
+                churnPrediction: analysis.churnPrediction
+            };
+        });
+    }
+
     const displayClients = hasClients ? clients.sort((a, b) => b.churnRisk - a.churnRisk) : [];
 
     return `
@@ -226,7 +242,14 @@ function createDashboardClientRow(client) {
 }
 
 function dashboardFilterClients(searchTerm) {
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
+    // Enrich with same logic as main render
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
+
     const filtered = clients.filter(c => {
         const fullName = getClientFullName(c).toLowerCase();
         const email = (c.email || '').toLowerCase();
@@ -243,7 +266,17 @@ function dashboardFilterClients(searchTerm) {
 }
 
 function dashboardFilterByRisk(risk) {
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
+    const allClients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
+    let clients = allClients;
+
+    // Enrich with same logic
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = allClients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
+
     let filtered = clients;
 
     if (risk === 'high') {

@@ -16,6 +16,14 @@ function renderClientsPage() {
         } else if (typeof CLIENTS !== 'undefined') {
             clients = CLIENTS || [];
         }
+
+        // Enrich clients with real-time analysis
+        if (typeof AdvancedChurnCalculator !== 'undefined') {
+            clients = clients.map(c => {
+                const analysis = AdvancedChurnCalculator.analyze(c);
+                return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+            });
+        }
     } catch (e) {
         console.error('Error loading clients:', e);
         clients = [];
@@ -360,8 +368,14 @@ function setClientFilter(filter, button) {
     document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.remove('active'));
     button.classList.add('active');
 
-    // Get clients from storage
-    const clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    // Get clients from storage and enrich
+    let clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
 
     // Apply filter
     let filtered = [...clients];
@@ -396,7 +410,14 @@ function setClientFilter(filter, button) {
 }
 
 function filterByMembership(membership) {
-    const clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    let clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    // Enrich
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
     let filtered = [...clients];
 
     if (membership) {
@@ -423,7 +444,14 @@ function filterByMembership(membership) {
 
 function clientsPageSearch(term) {
     const searchTerm = term.toLowerCase();
-    const clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    let clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    // Enrich
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
 
     let filtered = clients.filter(c => {
         const fullName = getClientFullName(c).toLowerCase();
@@ -444,7 +472,14 @@ function sortClientsPage(field) {
         currentSortDirection = 'asc';
     }
 
-    const clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    let clients = ClientDataService ? ClientDataService.getAll() : CLIENTS;
+    // Enrich
+    if (typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+        });
+    }
     let sorted = [...clients];
 
     sorted.sort((a, b) => {
