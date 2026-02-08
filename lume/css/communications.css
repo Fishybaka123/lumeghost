@@ -36,8 +36,9 @@
     background: var(--gray-50);
 }
 
+
 .comm-tab.active {
-    background: var(--primary);
+    background: #ef4444;
     color: white;
 }
 
