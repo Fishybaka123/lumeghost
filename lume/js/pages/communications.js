@@ -29,6 +29,13 @@ function renderCommunicationsPage() {
                             <p>Manage all client conversations in one place</p>
                         </div>
                         <div class="page-actions">
+                            <button class="btn btn-primary" onclick="openNewMessageModal()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                New Message
+                            </button>
                             <button class="btn btn-secondary" onclick="refreshCommunications()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <polyline points="23 4 23 10 17 10"/>
@@ -202,7 +209,169 @@ function renderCommunicationsPage() {
                 </div>
             </div>
         </div>
+
+        <!-- New Message Modal -->
+        <div id="new-message-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeNewMessageModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>New Message</h3>
+                    <button class="modal-close" onclick="closeNewMessageModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Select Client</label>
+                        <select id="new-msg-client" class="input" style="width: 100%; padding: 10px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+                            <option value="">-- Select a Client --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Message Type</label>
+                        <div class="type-selector" style="display: flex; gap: 8px;">
+                            <button type="button" class="type-btn active" onclick="setMsgType('sms', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">SMS</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('email', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Email</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('note', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Internal Note</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" style="font-weight: 500;">Message Content</label>
+                            <button type="button" class="btn btn-sm" onclick="generateAIMessage()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                </svg>
+                                AI Generate
+                            </button>
+                        </div>
+                        <textarea id="new-msg-content" class="input" rows="5" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-family: inherit; resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="closeNewMessageModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="sendNewMessage()">Send Message</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
+}
+
+// Global variable for current message type
+let currentMsgType = 'sms';
+
+function openNewMessageModal() {
+    const modal = document.getElementById('new-message-modal');
+    const select = document.getElementById('new-msg-client');
+
+    // Populate clients
+    if (select && ClientDataService) {
+        const clients = ClientDataService.getAll();
+        select.innerHTML = '<option value="">-- Select a Client --</option>' +
+            clients.map(c => `<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
+    }
+
+    // Reset form
+    document.getElementById('new-msg-content').value = '';
+    setMsgType('sms', document.querySelector('.type-btn')); // Reset to SMS
+
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeNewMessageModal() {
+    const modal = document.getElementById('new-message-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function setMsgType(type, btn) {
+    currentMsgType = type;
+
+    // Update UI
+    document.querySelectorAll('.type-btn').forEach(b => {
+        b.style.background = 'white';
+        b.style.color = 'var(--gray-700)';
+        b.style.borderColor = 'var(--gray-200)';
+        b.classList.remove('active');
+    });
+
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--primary)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--primary)';
+    }
+}
+
+function generateAIMessage() {
+    const type = currentMsgType;
+    const clientSelect = document.getElementById('new-msg-client');
+    const clientId = clientSelect.value;
+    let clientName = 'Client';
+
+    if (clientId && ClientDataService) {
+        const client = ClientDataService.getById(clientId);
+        if (client) clientName = client.firstName;
+    }
+
+    const textarea = document.getElementById('new-msg-content');
+
+    // Simulate AI generation with templates
+    let templates = [];
+
+    if (type === 'sms') {
+        templates = [
+            `Hi ${clientName}, this is a reminder for your upcoming appointment at Lume. Please reply 'C' to confirm.`,
+            `Hello ${clientName}, we have a special offer on HydraFacials this week! Book now to save 15%.`,
+            `Hi ${clientName}, it's been a while since your last visit. We'd love to see you again soon!`
+        ];
+    } else if (type === 'email') {
+        templates = [
+            `Subject: Your Appointment Confirmation\n\nDear ${clientName},\n\nWe look forward to seeing you for your appointment. Please arrive 10 minutes early.\n\nBest,\nLume Med Spa`,
+            `Subject: Exclusive Member Offer\n\nHi ${clientName},\n\nAs a valued client, we're excited to offer you exclusive access to our new skincare line...\n\nWarmly,\nThe Lume Team`,
+            `Subject: Follow-up on your treatment\n\nDear ${clientName},\n\nWe hope you're enjoying the results of your recent treatment. Here are some aftercare tips...\n\nBest,\nLume Med Spa`
+        ];
+    } else {
+        templates = [
+            `Client expressed interest in upgrading to the Premium membership package.`,
+            `Follow up with ${clientName} in 2 weeks regarding skin reaction to new product.`,
+            `Note: Client prefers room temperature water and extra pillows.`
+        ];
+    }
+
+    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+
+    // "Type" the message for effect
+    textarea.value = "Generating AI draft...";
+    setTimeout(() => {
+        textarea.value = randomTemplate;
+    }, 800);
+}
+
+function sendNewMessage() {
+    const clientId = document.getElementById('new-msg-client').value;
+    const content = document.getElementById('new-msg-content').value;
+
+    if (!clientId) {
+        showToast('Please select a client', 'error');
+        return;
+    }
+
+    if (!content) {
+        showToast('Please enter a message', 'error');
+        return;
+    }
+
+    if (CommunicationService) {
+        let metadata = {};
+        if (currentMsgType === 'email') metadata.subject = 'New Message';
+
+        CommunicationService.log(clientId, currentMsgType, content, metadata);
+
+        showToast('Message sent successfully', 'success');
+        closeNewMessageModal();
+        refreshCommunications(); // Update the list
+    }
 }
 
 function renderMessagesList(messages) {
