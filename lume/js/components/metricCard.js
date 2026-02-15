@@ -28,15 +28,13 @@ function createMetricCard(config) {
             ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'
             : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
 
-    // Don't show change if it's 0
+    // Don't show change if it's 0 (removed dash)
     const changeDisplay = change !== 0
         ? `<div class="metric-trend ${trend}">
                ${trendIcon}
                <span>${Math.abs(change)}%</span>
            </div>`
-        : `<div class="metric-trend neutral">
-               <span class="no-change">—</span>
-           </div>`;
+        : '';
 
     return `
         <div class="metric-card glass-card">
@@ -80,7 +78,7 @@ const METRIC_CONFIGS = {
         color: 'amber'
     },
     healthScore: {
-        label: 'Health Score',
+        label: 'AVG Health Score',
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
         color: 'purple'
     }

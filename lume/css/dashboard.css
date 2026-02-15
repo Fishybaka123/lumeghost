@@ -333,16 +333,18 @@
 }
 
 .metric-label {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     color: var(--gray-500);
     margin-bottom: var(--spacing-1);
+    font-weight: 500;
 }
 
 .metric-value {
-    font-size: var(--font-size-2xl);
-    font-weight: 700;
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
     color: var(--gray-900);
     line-height: 1.2;
+    letter-spacing: -0.02em;
 }
 
 .metric-trend {
