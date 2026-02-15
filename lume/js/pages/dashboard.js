@@ -12,6 +12,10 @@ function renderDashboardPage() {
     }
 
     // Get clients (safe access)
+    if (typeof ClientDataService !== 'undefined' && !ClientDataService.isInitialized()) {
+        ClientDataService.init();
+    }
+
     let clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
     const hasClients = clients && clients.length > 0;
 

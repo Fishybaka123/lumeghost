@@ -346,5 +346,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ClientDataService.init();
 });
 
+// Listen for login event to re-init
+window.addEventListener('lume:auth:login', () => {
+    console.log('🔑 Login detected, initializing ClientDataService...');
+    ClientDataService._initialized = false; // Force re-fetch
+    ClientDataService.init();
+});
+
 // Export for use
 window.ClientDataService = ClientDataService;
