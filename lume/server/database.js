@@ -36,6 +36,7 @@ async function initDatabase() {
             password_hash TEXT NOT NULL,
             name TEXT NOT NULL,
             business_name TEXT DEFAULT '',
+            settings TEXT DEFAULT '{}',
             verified INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -108,10 +109,19 @@ const userOps = {
 
         const columns = result[0].columns;
         const values = result[0].values[0];
-        return columns.reduce((obj, col, i) => {
+        const user = columns.reduce((obj, col, i) => {
             obj[col] = values[i];
             return obj;
         }, {});
+
+        if (user.settings && typeof user.settings === 'string') {
+            try {
+                user.settings = JSON.parse(user.settings);
+            } catch (e) {
+                user.settings = {};
+            }
+        }
+        return user;
     },
 
     // Find user by ID
@@ -135,13 +145,20 @@ const userOps = {
 
     // Update user profile
     updateProfile: (userId, data) => {
+        // Handle settings JSON serialization
+        let settingsJson = undefined;
+        if (data.settings) {
+            settingsJson = JSON.stringify(data.settings);
+        }
+
         db.run(`
             UPDATE users 
             SET name = COALESCE(?, name),
                 business_name = COALESCE(?, business_name),
+                settings = COALESCE(?, settings),
                 updated_at = datetime('now')
             WHERE id = ?
-        `, [data.name, data.businessName, userId]);
+        `, [data.name, data.businessName, settingsJson, userId]);
         saveDatabase();
     },
 

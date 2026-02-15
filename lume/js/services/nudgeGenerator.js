@@ -66,10 +66,6 @@ const NudgeGenerator = {
             daysUntilExpiry = Math.ceil((new Date(client.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
         }
 
-        let daysSinceVisit = null;
-        if (client.lastVisit) {
-            daysSinceVisit = Math.ceil((new Date() - new Date(client.lastVisit)) / (1000 * 60 * 60 * 24));
-        }
 
         return {
             firstName,
@@ -81,7 +77,7 @@ const NudgeGenerator = {
             remainingSessions: client.remainingSessions,
             expireDate: client.expireDate ? new Date(client.expireDate).toLocaleDateString() : null,
             daysUntilExpiry,
-            daysSinceVisit,
+            daysUntilExpiry,
             urgency: analysis.urgency,
             healthScore: analysis.healthScore,
             recommendation: analysis.recommendation
@@ -110,7 +106,7 @@ const NudgeGenerator = {
             },
             're-engagement': {
                 vip: `{firstName}, we miss you! 💜\n\nIt's been a while since your last visit, and we wanted to check in. Your skin (and your wellbeing) deserve the VIP treatment!\n\nAs a special "welcome back" offer, enjoy a complimentary upgrade on your next visit. Just mention this message when you book.\n\nWe'd love to see you again soon.\n\nWith care,\nYour VIP Team`,
-                premium: `Hi {firstName}!\n\nWe've missed seeing you at the spa! It's been {daysSinceVisit} days since your last visit.\n\nCome back and treat yourself – you deserve it! As a thank you for being a Premium member, enjoy 15% off your next treatment.\n\nBook now: [Schedule Visit]\n\nSee you soon!`,
+                premium: `Hi {firstName}!\n\nWe've missed seeing you at the spa!\n\nCome back and treat yourself – you deserve it! As a thank you for being a Premium member, enjoy 15% off your next treatment.\n\nBook now: [Schedule Visit]\n\nSee you soon!`,
                 default: `Hello {firstName},\n\nWe miss you! It's been a while since your last visit, and we wanted to see how you're doing.\n\nWe'd love to welcome you back with a special 10% off any treatment. No strings attached – just our way of saying we care.\n\nReady to book? [Click Here]\n\nHope to see you soon!`
             },
             'check-in': {

@@ -2,7 +2,7 @@
 // SIMPLE HASH-BASED ROUTER
 // ===========================================
 
-const routes = {
+var routes = {
     '/': renderLoginPage,
     '/login': renderLoginPage,
     '/dashboard': renderDashboardPage,
@@ -15,9 +15,9 @@ const routes = {
     '/settings': renderSettingsPage
 };
 
-function navigateTo(path) {
+window.navigateTo = function (path) {
     window.location.hash = path;
-}
+};
 
 function getRoute() {
     const hash = window.location.hash.slice(1) || '/';
@@ -81,15 +81,20 @@ function router() {
     const matched = matchRoute(path);
 
     if (matched) {
-        if (Object.keys(matched.params).length > 0) {
-            // Dynamic route with params
-            app.innerHTML = matched.handler(matched.params.id);
-        } else {
-            app.innerHTML = matched.handler();
-        }
-        // Track navigation for back button
-        if (typeof trackNavigation === 'function') {
-            trackNavigation(path);
+        try {
+            if (Object.keys(matched.params).length > 0) {
+                // Dynamic route with params
+                app.innerHTML = matched.handler(matched.params.id);
+            } else {
+                app.innerHTML = matched.handler();
+            }
+            // Track navigation for back button
+            if (typeof trackNavigation === 'function') {
+                trackNavigation(path);
+            }
+        } catch (error) {
+            console.error('Route rendering error:', error);
+            app.innerHTML = renderErrorPage(error);
         }
     } else {
         app.innerHTML = renderNotFoundPage('Page not found');
@@ -147,5 +152,28 @@ function renderPlaceholderPage(title, description) {
     `;
 }
 
+function renderErrorPage(error) {
+    return `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; font-family: sans-serif;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64" style="color: #ef4444; margin-bottom: 24px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <h2 style="margin: 0 0 8px 0;">Something went wrong</h2>
+            <p style="color: #64748b; margin-bottom: 24px;">We encountered an error while loading this page.</p>
+            <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 24px; text-align: left; font-family: monospace; font-size: 12px; color: #334155; max-width: 80%; overflow: auto;">
+                ${error.message || 'Unknown error'}
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="window.location.reload()" style="padding: 8px 16px; background: #0ea5e9; color: white; border: none; border-radius: 6px; cursor: pointer;">Reload Page</button>
+                <button onclick="navigateTo('/dashboard')" style="padding: 8px 16px; background: #e2e8f0; color: #0f172a; border: none; border-radius: 6px; cursor: pointer;">Go to Dashboard</button>
+            </div>
+        </div>
+    `;
+}
+
 // Listen for hash changes
 window.addEventListener('hashchange', router);
+
+console.log('✅ Router module loaded');

@@ -21,10 +21,6 @@ const ChurnAnalyzer = {
         riskScore += expiryRisk.score;
         if (expiryRisk.factor) factors.push(expiryRisk.factor);
 
-        // Factor 3: Last Visit Recency (0-20 points)
-        const visitRisk = this.analyzeLastVisit(client.lastVisit);
-        riskScore += visitRisk.score;
-        if (visitRisk.factor) factors.push(visitRisk.factor);
 
         // Factor 4: Membership Type (0-15 points)
         const membershipRisk = this.analyzeMembership(client.membershipType);
@@ -90,29 +86,6 @@ const ChurnAnalyzer = {
         return { score: 0, factor: null };
     },
 
-    /**
-     * Analyze last visit recency
-     */
-    analyzeLastVisit(lastVisit) {
-        if (!lastVisit) {
-            return { score: 20, factor: 'No visit history' };
-        }
-
-        const today = new Date();
-        const visit = new Date(lastVisit);
-        const daysSinceVisit = Math.ceil((today - visit) / (1000 * 60 * 60 * 24));
-
-        if (daysSinceVisit > 90) {
-            return { score: 20, factor: `No visit in ${daysSinceVisit} days` };
-        }
-        if (daysSinceVisit > 60) {
-            return { score: 15, factor: 'No visit in over 2 months' };
-        }
-        if (daysSinceVisit > 30) {
-            return { score: 8, factor: 'No visit in over 1 month' };
-        }
-        return { score: 0, factor: null };
-    },
 
     /**
      * Analyze membership type
@@ -152,9 +125,6 @@ const ChurnAnalyzer = {
         }
         if (factors.some(f => f.includes('expires in'))) {
             return 'Schedule remaining sessions before expiration';
-        }
-        if (factors.some(f => f.includes('No visit'))) {
-            return 'Send re-engagement nudge with personalized offer';
         }
         return 'Maintain regular check-ins';
     },

@@ -1,176 +1,324 @@
 // ===========================================
-// CLIENT DATA SERVICE
-// Central data management with localStorage persistence
+// CLIENT DATA SERVICE - SUPABASE DB INTEGRATION
 // ===========================================
 
 const ClientDataService = {
-    STORAGE_KEY: 'lume_imported_clients',
+    // In-memory cache
+    _clients: [],
+    _initialized: false,
 
     /**
-     * Initialize - load from storage or use defaults
+     * Initialize - load from Supabase
      */
-    init() {
-        const stored = this.loadFromStorage();
-        if (stored && stored.length > 0) {
-            // Replace CLIENTS with imported data
-            window.CLIENTS = stored;
-            console.log(`Loaded ${stored.length} clients from storage`);
+    async init() {
+        if (!supabase) return [];
+        if (this._initialized) return this._clients;
+
+        try {
+            // Check if user is logged in first
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.log('ℹ️ No active session, skipping data load');
+                return [];
+            }
+
+            const { data, error } = await supabase
+                .from('clients')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Map DB columns to app keys if necessary (snake_case -> camelCase)
+            this._clients = data.map(this._mapFromDB);
+
+            // Analyze loaded clients
+            this._clients = this._enrichClients(this._clients);
+
+            window.CLIENTS = this._clients;
+            this._initialized = true;
+            console.log(`✅ Loaded ${this._clients.length} clients from Supabase`);
+
+            // Notify app that data is ready
+            window.dispatchEvent(new CustomEvent('lume-clients-loaded', { detail: { count: this._clients.length } }));
+
+            return this._clients;
+        } catch (error) {
+            console.error('Failed to load clients:', error);
+            return [];
         }
-        return window.CLIENTS;
     },
 
     /**
-     * Import clients from CSV and save
+     * Check if data is loaded
      */
-    importFromCSV(csvText) {
-        try {
-            // Parse CSV
-            let clients = CSVParser.parse(csvText);
-
-            // Analyze each client for churn risk
-            clients = ChurnAnalyzer.analyzeAll(clients);
-
-            // Save to storage
-            this.saveToStorage(clients);
-
-            // Update global CLIENTS
-            window.CLIENTS = clients;
-
-            return {
-                success: true,
-                count: clients.length,
-                clients
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: error.message
-            };
-        }
+    isInitialized() {
+        return this._initialized;
     },
 
     /**
      * Get all clients
      */
     getAll() {
-        return window.CLIENTS || [];
+        return this._clients;
     },
 
     /**
      * Get client by ID
      */
     getById(id) {
-        const clients = this.getAll();
-        return clients.find(c => c.id === parseInt(id));
-    },
-
-    /**
-     * Update a client
-     */
-    update(clientId, updates) {
-        const clients = this.getAll();
-        const index = clients.findIndex(c => c.id === parseInt(clientId));
-
-        if (index !== -1) {
-            // Merge updates
-            clients[index] = { ...clients[index], ...updates };
-
-            // Re-analyze if relevant fields changed
-            if (updates.remainingSessions !== undefined ||
-                updates.expireDate !== undefined ||
-                updates.lastVisit !== undefined) {
-                const analysis = ChurnAnalyzer.analyze(clients[index]);
-                clients[index] = { ...clients[index], ...analysis };
-            }
-
-            // Save
-            this.saveToStorage(clients);
-            window.CLIENTS = clients;
-
-            return clients[index];
-        }
-        return null;
+        return this._clients.find(c => c.id == id);
     },
 
     /**
      * Add a new client
      */
-    add(clientData) {
-        const clients = this.getAll();
+    async add(clientData) {
+        if (!supabase) return null;
 
-        // Generate ID
-        clientData.id = Date.now();
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
 
-        // Analyze
-        const analysis = ChurnAnalyzer.analyze(clientData);
-        const newClient = { ...clientData, ...analysis };
+            // Name parsing logic
+            let firstName = clientData.firstName;
+            let lastName = clientData.lastName;
 
-        clients.push(newClient);
-        this.saveToStorage(clients);
-        window.CLIENTS = clients;
+            if (!firstName && clientData.name) {
+                const nameParts = clientData.name.trim().split(' ');
+                firstName = nameParts[0];
+                lastName = nameParts.slice(1).join(' ') || '';
+                // Handle comma format "Last, First"
+                if (clientData.name.includes(',')) {
+                    const parts = clientData.name.split(',');
+                    lastName = parts[0].trim();
+                    firstName = parts[1].trim();
+                }
+            }
 
-        return newClient;
+            // Prepare for DB
+            const dbPayload = {
+                user_id: user.id,
+                first_name: firstName || 'Unknown',
+                last_name: lastName || '',
+                email: clientData.email,
+                phone: clientData.phone,
+                status: clientData.status || 'active',
+                membership_type: clientData.membershipTier || clientData.membershipType || clientData.packageName || 'None',
+                remaining_sessions: (String(clientData.remainingSessions).toLowerCase().includes('unlimited')) ? -1 : (parseInt(clientData.remainingSessions) || 0),
+                expire_date: clientData.expireDate ? new Date(clientData.expireDate) : null,
+                total_spend: parseFloat(clientData.totalSpent) || 0,
+                visit_count: parseInt(clientData.visitCount) || 0,
+                last_visit: clientData.lastVisit ? new Date(clientData.lastVisit) : new Date()
+            };
+
+            const { data, error } = await supabase
+                .from('clients')
+                .insert([dbPayload])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newClient = this._enrichClients([this._mapFromDB(data)])[0];
+            this._clients.unshift(newClient);
+            window.CLIENTS = this._clients;
+
+            return newClient;
+        } catch (error) {
+            console.error('Failed to add client:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Add multiple clients at once (Batch)
+     */
+    async batchAdd(clientsData) {
+        if (!supabase || !clientsData.length) return { success: true, count: 0 };
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Prepare payloads
+            const dbPayloads = clientsData.map(c => {
+                // Name parsing logic
+                let firstName = c.firstName;
+                let lastName = c.lastName;
+
+                if (!firstName && c.name) {
+                    const nameParts = c.name.trim().split(' ');
+                    firstName = nameParts[0];
+                    lastName = nameParts.slice(1).join(' ') || '';
+                    // Handle comma format "Last, First"
+                    if (c.name.includes(',')) {
+                        const parts = c.name.split(',');
+                        lastName = parts[0].trim();
+                        firstName = parts[1].trim();
+                    }
+                }
+
+                return {
+                    user_id: user.id,
+                    first_name: firstName || 'Unknown',
+                    last_name: lastName || '',
+                    email: c.email,
+                    phone: c.phone,
+                    status: c.status || 'active',
+                    membership_type: c.membershipTier || c.membershipType || c.packageName || 'None',
+                    remaining_sessions: (String(c.remainingSessions).toLowerCase().includes('unlimited')) ? -1 : (parseInt(c.remainingSessions) || 0),
+                    expire_date: c.expireDate ? new Date(c.expireDate) : null,
+                    total_spend: parseFloat(c.totalSpent) || 0,
+                    visit_count: parseInt(c.visitCount) || 0,
+                    last_visit: c.lastVisit ? new Date(c.lastVisit) : new Date()
+                };
+            });
+
+            // Supabase allows bulk insert
+            console.log("🚀 Payload to Supabase:", dbPayloads);
+            const { data, error } = await supabase
+                .from('clients')
+                .insert(dbPayloads)
+                .select();
+
+            if (error) {
+                console.error("❌ Supabase Batch Insert Error:", error);
+                throw error;
+            }
+            console.log("✅ Supabase Return:", data);
+
+            if (!data || data.length === 0) {
+                console.warn("⚠️ Warning: Insert succeeded but returned NO data (possible RLS blocking SELECT).");
+            }
+
+            const newClients = this._enrichClients(data.map(this._mapFromDB));
+            this._clients = [...newClients, ...this._clients]; // Prepend? Or refetch.
+            window.CLIENTS = this._clients;
+
+            // Notify app using refined event
+            window.dispatchEvent(new CustomEvent('lume-clients-loaded', { detail: { count: this._clients.length } }));
+
+            // Debug alert for user
+            try {
+                // Check if running in browser
+                // alert(`Debug: Inserted ${data.length} records to DB.`); 
+            } catch (e) { }
+
+            return { success: true, count: newClients.length, clients: newClients };
+
+        } catch (error) {
+            console.error('Batch add error:', error);
+            throw error;
+        }
     },
 
     /**
      * Delete a client
      */
-    delete(clientId) {
-        let clients = this.getAll();
-        clients = clients.filter(c => c.id !== parseInt(clientId));
-        this.saveToStorage(clients);
-        window.CLIENTS = clients;
-        return true;
-    },
+    async delete(clientId) {
+        if (!supabase) return false;
 
-    /**
-     * Save to localStorage
-     */
-    saveToStorage(clients) {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(clients));
+            const { error } = await supabase
+                .from('clients')
+                .delete()
+                .eq('id', clientId);
+
+            if (error) throw error;
+
+            this._clients = this._clients.filter(c => c.id != clientId);
+            window.CLIENTS = this._clients;
             return true;
-        } catch (e) {
-            console.error('Failed to save clients:', e);
+        } catch (error) {
+            console.error('Failed to delete client:', error);
             return false;
         }
     },
 
     /**
-     * Load from localStorage
+     * Delete ALL clients for current user
      */
-    loadFromStorage() {
+    async deleteAll() {
+        if (!supabase) return false;
+
         try {
-            const data = localStorage.getItem(this.STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
-        } catch (e) {
-            console.error('Failed to load clients:', e);
-            return null;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { error } = await supabase
+                .from('clients')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            this._clients = [];
+            window.CLIENTS = [];
+
+            // Notify app
+            window.dispatchEvent(new CustomEvent('lume-clients-loaded', { detail: { count: 0 } }));
+
+            return true;
+        } catch (error) {
+            console.error('Failed to delete all clients:', error);
+            return false;
         }
     },
 
     /**
-     * Clear all client data (reset to empty)
+     * Helper: Map DB snake_case to app camelCase
      */
-    clearImportedData() {
-        localStorage.removeItem(this.STORAGE_KEY);
-        window.CLIENTS = [];
+    _mapFromDB(record) {
+        // Convert -1 back to 'Unlimited' for display
+        let sessions = record.remaining_sessions;
+        if (sessions === -1) sessions = 'Unlimited';
+
+        return {
+            id: record.id,
+            firstName: record.first_name,
+            lastName: record.last_name,
+            email: record.email,
+            phone: record.phone,
+            membershipType: record.membership_type,
+            packageName: record.membership_type,  // packageName stored in membership_type column
+            status: record.status,
+            joinDate: record.join_date,
+            expireDate: record.expire_date,
+            remainingSessions: sessions,
+            totalSessions: record.total_sessions,
+            visitCount: record.visit_count || 0,
+            totalSpend: record.total_spend || 0,
+            lastVisit: record.last_visit,
+
+            // Map analyzed fields if they exist in DB (fallback for enrichment)
+            healthScore: record.health_score || 50,
+            churnRisk: record.churn_risk || 0,
+
+            // Generate UI fields
+            avatarColor: window.generateAvatarColor ?
+                window.generateAvatarColor(record.first_name, record.last_name) : '#3b82f6',
+
+            raw: record
+        };
     },
 
     /**
-     * Reset to demo data for testing
-     */
-    resetToDemoData() {
-        // Clear storage and reload to get fresh empty state
-        localStorage.removeItem(this.STORAGE_KEY);
-        location.reload();
-    },
-
-    /**
-     * Check if using imported data
-     */
-    isUsingImportedData() {
-        return localStorage.getItem(this.STORAGE_KEY) !== null;
+    * Helper: Enrich with AI analysis
+    */
+    _enrichClients(clients) {
+        if (typeof AdvancedChurnCalculator !== 'undefined') {
+            return clients.map(c => {
+                try {
+                    const analysis = AdvancedChurnCalculator.analyze(c);
+                    return { ...c, ...analysis };
+                } catch (e) {
+                    console.warn(`Failed to enrich client ${c.id}:`, e);
+                    return c; // Return basic client if analysis fails
+                }
+            });
+        }
+        return clients;
     },
 
     /**
@@ -181,20 +329,14 @@ const ClientDataService = {
 
         return {
             total: clients.length,
-            atRisk: clients.filter(c => c.churnRisk >= 60).length,
+            atRisk: clients.filter(c => c.churnRisk >= 40).length,
             healthy: clients.filter(c => c.healthScore >= 70).length,
             expiringSoon: clients.filter(c => {
                 if (!c.expireDate) return false;
                 const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
                 return days <= 14 && days > 0;
             }).length,
-            lowSessions: clients.filter(c => c.remainingSessions <= 2).length,
-            byMembership: {
-                vip: clients.filter(c => c.membershipType === 'vip').length,
-                premium: clients.filter(c => c.membershipType === 'premium').length,
-                basic: clients.filter(c => c.membershipType === 'basic').length,
-                none: clients.filter(c => !c.membershipType || c.membershipType === 'none').length
-            }
+            lowSessions: clients.filter(c => c.remainingSessions <= 2).length
         };
     }
 };

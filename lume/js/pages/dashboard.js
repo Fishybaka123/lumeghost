@@ -3,7 +3,7 @@
 // ===========================================
 
 function renderDashboardPage() {
-    const user = AuthService ? AuthService.getCurrentUser() :
+    const user = (typeof AuthService !== 'undefined' && AuthService.getCurrentUser()) ? AuthService.getCurrentUser() :
         JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
     // Refresh metrics before rendering
@@ -12,7 +12,7 @@ function renderDashboardPage() {
     }
 
     // Get clients (safe access)
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
+    let clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
     const hasClients = clients && clients.length > 0;
 
     // Get all clients (limited to 50 for performance if needed, but user asked for all)
@@ -44,8 +44,8 @@ function renderDashboardPage() {
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">
-                            <h1 style="color: #000000 !important; text-emphasis-color: #000000 !important; -webkit-text-fill-color: #000000 !important;">Welcome back! 👋</h1>
-                            <p style="color: #333333 !important;">Here's what's happening with your clients today</p>
+                            <h1 id="dashboard-greeting">Welcome back, ${user.businessName || 'Lume MedSpa'}! 👋</h1>
+                            <p>Here's what's happening with your clients today</p>
                         </div>
                         <div class="page-actions">
                             <button class="btn btn-secondary" onclick="refreshDashboard()">
@@ -76,7 +76,7 @@ function renderDashboardPage() {
                     </div>
                     
                     <!-- All Clients Quick View -->
-                    <div class="quick-view-section">
+                    <div class="quick-view-section glass-panel">
                         <div class="quick-view-header">
                             <h3 class="quick-view-title">All Clients</h3>
                             <div class="quick-view-filters">
@@ -111,22 +111,21 @@ function renderDashboardPage() {
                                         <tr>
                                             <th>Client</th>
                                             <th>Health Score</th>
-                                            <th>Churn Risk</th>
-                                            <th>Last Visit</th>
-                                            <th>Membership</th>
-                                            <th>AI Suggestion</th>
+                                            <th>Sessions Left</th>
+                                            <th>Expires</th>
+                                            <th>Package</th>
                                         </tr>
                                     </thead>
                                     <tbody id="dashboard-clients-body">
                                         ${displayClients.length > 0
                 ? displayClients.map(client => createDashboardClientRow(client)).join('')
-                : '<tr><td colspan="6" class="empty-table-message">No clients found</td></tr>'
+                : '<tr><td colspan="5" class="empty-table-message">No clients found</td></tr>'
             }
                                     </tbody>
                                 </table>
                             </div>
                         ` : `
-                            <div class="empty-state-card">
+                            <div class="empty-state-card glass-card">
                                 <div class="empty-state-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -155,38 +154,8 @@ function renderDashboardPage() {
 }
 
 function createDashboardClientRow(client) {
-    const healthClass = getHealthScoreClass(client.healthScore);
-    const churnClass = getChurnRiskClass(client.churnRisk);
-
-    // AI Suggestion Logic
-    let suggestion = '';
-    let suggestionClass = 'text-muted';
-    let suggestionIcon = '';
-
-    // Suggest action if health is low (< 50) OR if churn risk is medium/high (>= 30)
-    if (client.healthScore >= 50 && client.churnRisk < 30) {
-        suggestion = 'No action needed';
-        suggestionClass = 'suggestion-good';
-        suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>`;
-    } else {
-        suggestionClass = 'suggestion-action';
-        // Generate specific suggestion using logic similar to NudgeGenerator
-        if (client.churnRisk >= 50) {
-            suggestion = 'Send re-engagement text';
-        } else if (client.churnRisk >= 30) {
-            suggestion = 'Offer loyalty discount';
-        } else if (client.remainingSessions <= 2) {
-            suggestion = 'Suggest package renewal';
-        } else if (client.expireDate && new Date(client.expireDate) < new Date()) {
-            suggestion = 'Contact for membership renewal';
-        } else if (client.lastVisit && (new Date() - new Date(client.lastVisit)) / (1000 * 60 * 60 * 24) > 60) {
-            suggestion = 'Reach out - absent >60 days';
-        } else {
-            // Fallback for low health score but no specific trigger
-            suggestion = 'Review client profile';
-        }
-        suggestionIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-    }
+    const healthScore = Math.min(Math.max(Number(client.healthScore) || 0, 0), 100);
+    const healthClass = getHealthScoreClass(healthScore);
 
     return `
         <tr data-client-id="${client.id}" onclick="navigateTo('/clients/${client.id}')">
@@ -197,51 +166,41 @@ function createDashboardClientRow(client) {
                     </div>
                     <div class="client-info">
                         <div class="client-name">${getClientFullName(client)}</div>
-                        <div class="client-email">${client.email}</div>
+                        <div class="client-email">${client.email || ''}</div>
                     </div>
                 </div>
             </td>
             <td>
                 <div class="health-score ${healthClass}">
-                    <span>${client.healthScore}</span>
+                    <span>${healthScore}</span>
                     <div class="health-score-bar">
-                        <div class="health-score-fill" style="width: ${client.healthScore}%"></div>
+                        <div class="health-score-fill" style="width: ${healthScore}%"></div>
                     </div>
                 </div>
             </td>
             <td>
-                <span class="churn-badge ${churnClass}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                    </svg>
-                    ${client.churnRisk}% ${client.churnRisk >= 60 ? 'High Risk' : client.churnRisk >= 30 ? 'Medium' : 'Low'}
-                </span>
-            </td>
-            <td>
-                <span class="text-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 4px; color: var(--gray-400);">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    ${client.lastVisit ? getRelativeTime(client.lastVisit) : 'No visits yet'}
-                </span>
-            </td>
-            <td>
-                <span class="membership-badge ${getMembershipBadgeClass(client.membershipType)}">
-                    ${getMembershipLabel(client.membershipType)}
-                </span>
-            </td>
-            <td>
-                <div class="ai-suggestion ${suggestionClass}">
-                    ${suggestionIcon}
-                    ${suggestion}
+                <div class="session-info">
+                    <span class="session-count">${client.remainingSessions !== undefined ? (client.remainingSessions == 999 || String(client.remainingSessions).toLowerCase().includes('unlimited') ? 'Unlimited' : client.remainingSessions) : '-'}</span>
                 </div>
+            </td>
+            <td>
+                <div class="expiry-info ${client.expireDate && new Date(client.expireDate) < new Date() ? 'expired' : ''}">
+                    ${client.expireDate ? formatDate(client.expireDate) : '-'}
+                </div>
+            </td>
+            <td>
+                <span class="package-name" title="${client.packageName || ''}">
+                    ${client.packageName || '-'}
+                </span>
             </td>
         </tr>
     `;
 }
 
 function dashboardFilterClients(searchTerm) {
+    const allClients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : (window.CLIENTS || []);
+    let clients = allClients;
+
     // Enrich with same logic as main render
     if (typeof AdvancedChurnCalculator !== 'undefined') {
         clients = clients.map(c => {
@@ -261,7 +220,7 @@ function dashboardFilterClients(searchTerm) {
     if (tbody) {
         tbody.innerHTML = filtered.length > 0
             ? filtered.map(client => createDashboardClientRow(client)).join('')
-            : '<tr><td colspan="6" class="empty-table-message">No matching clients found</td></tr>';
+            : '<tr><td colspan="5" class="empty-table-message">No matching clients found</td></tr>';
     }
 }
 
@@ -292,8 +251,34 @@ function dashboardFilterByRisk(risk) {
     if (tbody) {
         tbody.innerHTML = filtered.length > 0
             ? filtered.map(client => createDashboardClientRow(client)).join('')
-            : '<tr><td colspan="6" class="empty-table-message">No clients in this category</td></tr>';
+            : '<tr><td colspan="5" class="empty-table-message">No clients in this category</td></tr>';
     }
+}
+
+
+function handleAISuggestionAction(event, clientId, suggestion) {
+    if (event) event.stopPropagation(); // Prevent row click from navigating
+
+    // Map suggestion text to action types
+    let actionType = 'review';
+    const s = suggestion.toLowerCase();
+
+    if (s.includes('re-engagement') || s.includes('renewal') || s.includes('reach out') || s.includes('discount') || s.includes('offer')) {
+        actionType = 'send-nudge';
+    } else if (s.includes('schedule')) {
+        actionType = 'schedule';
+    }
+
+    // Store pending action in sessionStorage for the profile page to pick up
+    sessionStorage.setItem('lume_pending_action', JSON.stringify({
+        clientId: clientId,
+        type: actionType,
+        suggestion: suggestion,
+        timestamp: Date.now()
+    }));
+
+    // Navigate to client profile
+    navigateTo(`/clients/${clientId}`);
 }
 
 function refreshDashboard() {
@@ -318,9 +303,64 @@ function refreshDashboard() {
 }
 
 function exportReport() {
-    showToast('📊 Generating dashboard report...', 'info');
-    setTimeout(() => {
-        showToast('✅ Report ready for download!', 'success');
-    }, 1500);
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+
+    if (clients.length === 0) {
+        showToast('No data to export', 'warning');
+        return;
+    }
+
+    // Enrich data if possible
+    const exportData = clients.map(c => {
+        let health = c.healthScore;
+        let risk = c.churnRisk;
+
+        if (typeof AdvancedChurnCalculator !== 'undefined') {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            health = analysis.healthScore;
+            risk = analysis.churnRisk;
+        }
+
+        return {
+            ...c,
+            healthScore: health,
+            churnRisk: risk
+        };
+    });
+
+    // CSV Headers
+    const headers = ['Client Name', 'Email', 'Phone', 'Health Score', 'Churn Risk', 'Membership', 'Sessions Left', 'Expires', 'Total Spent'];
+
+    // CSV Rows
+    const rows = exportData.map(c => [
+        `"${getClientFullName(c)}"`,
+        c.email || '',
+        c.phone || '',
+        c.healthScore || 0,
+        `${c.churnRisk || 0}%`,
+        c.packageName || c.membershipType || 'None',
+        c.remainingSessions === 999 ? 'Unlimited' : (c.remainingSessions || 0),
+        c.expireDate ? new Date(c.expireDate).toLocaleDateString() : '-',
+        `$${c.totalSpent || 0}`
+    ]);
+
+    // Build CSV Content
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    // Trigger Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lume_dashboard_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✅ Dashboard report exported', 'success');
 }
 

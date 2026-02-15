@@ -3,6 +3,8 @@
    AI-Powered Med Spa Client Retention Platform
    =========================================== */
 
+
+
 /* CSS Reset & Variables */
 :root {
     /* Primary Colors - Deep teal/blue gradient */
@@ -102,6 +104,8 @@
     --header-height: 64px;
 }
 
+
+
 /* CSS Reset */
 *,
 *::before,
@@ -122,12 +126,27 @@ body {
     font-size: var(--font-size-base);
     line-height: 1.5;
     color: var(--gray-800);
-    background-color: var(--gray-50);
+    /* Mesh Gradient Background */
+    background:
+        radial-gradient(at 40% 20%, hsla(28, 100%, 74%, 1) 0px, transparent 50%),
+        radial-gradient(at 80% 0%, hsla(189, 100%, 56%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 1) 0px, transparent 50%),
+        radial-gradient(at 80% 50%, hsla(340, 100%, 76%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(22, 100%, 77%, 1) 0px, transparent 50%),
+        radial-gradient(at 80% 100%, hsla(242, 100%, 70%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 1) 0px, transparent 50%);
+    background-color: #fce7f3;
+    /* Fallback */
+    background-attachment: fixed;
+    background-size: 400% 400%;
+    animation: meshFlow 20s ease infinite;
     min-height: 100vh;
 }
 
 #app {
     min-height: 100vh;
+    backdrop-filter: blur(0px);
+    /* Fix for some browsers */
 }
 
 /* Typography Utilities */

@@ -5,45 +5,13 @@
 .login-page {
     min-height: 100vh;
     display: flex;
-    background: linear-gradient(135deg, #0d7a8c 0%, #053138 100%);
+    background: transparent;
     position: relative;
     overflow: hidden;
 }
 
 /* Animated background elements */
-.login-page::before {
-    content: '';
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    top: -200px;
-    right: -100px;
-    animation: float 20s infinite ease-in-out;
-}
-
-.login-page::after {
-    content: '';
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-    bottom: -100px;
-    left: -100px;
-    animation: float 15s infinite ease-in-out reverse;
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0) rotate(0deg);
-    }
-
-    50% {
-        transform: translateY(-30px) rotate(5deg);
-    }
-}
+/* Legacy background animations removed for Liquid Glass UI */
 
 /* Left side - Branding */
 .login-branding {

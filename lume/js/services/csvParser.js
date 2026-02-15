@@ -149,7 +149,7 @@ const CSVParser = {
             churnRisk: 50,
             riskFactors: [],
             // Default values
-            lastVisit: new Date().toISOString().split('T')[0],
+            // Default values
             nextAppointment: null,
             totalSpend: 0,
             visitCount: 0,

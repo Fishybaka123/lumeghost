@@ -2,12 +2,15 @@
 // CLIENT TABLE COMPONENT
 // ===========================================
 
+
+
 function createClientRow(client) {
-    const healthClass = getHealthScoreClass(client.healthScore);
+    const healthScore = Math.min(Math.max(Number(client.healthScore) || 0, 0), 100);
+    const healthClass = getHealthScoreClass(healthScore);
     const churnClass = getChurnRiskClass(client.churnRisk);
 
     return `
-        <tr data-client-id="${client.id}" onclick="navigateTo('/clients/${client.id}')">
+        <tr data-client-id="${client.id}" onclick="window.navigateTo('/clients/${client.id}')" style="cursor: pointer;">
             <td>
                 <div class="client-cell">
                     <div class="client-avatar" style="background-color: ${client.avatarColor}">
@@ -15,64 +18,32 @@ function createClientRow(client) {
                     </div>
                     <div class="client-info">
                         <div class="client-name">${getClientFullName(client)}</div>
-                        <div class="client-email">${client.email}</div>
+                        <div class="client-email">${client.email || ''}</div>
                     </div>
                 </div>
             </td>
             <td>
                 <div class="health-score ${healthClass}">
-                    <span>${client.healthScore}</span>
+                    <span>${healthScore}</span>
                     <div class="health-score-bar">
-                        <div class="health-score-fill" style="width: ${client.healthScore}%"></div>
+                        <div class="health-score-fill" style="width: ${healthScore}%"></div>
                     </div>
                 </div>
             </td>
             <td>
-                <span class="churn-badge ${churnClass}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                    </svg>
-                    ${client.churnRisk}% ${client.churnRisk >= 60 ? 'High Risk' : client.churnRisk >= 30 ? 'Medium' : 'Low'}
-                </span>
-            </td>
-            <td>
-                <span class="text-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 4px; color: var(--gray-400);">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    ${client.lastVisit ? getRelativeTime(client.lastVisit) : 'No visits yet'}
-                </span>
-            </td>
-            <td>
-                <span class="membership-badge ${getMembershipBadgeClass(client.membershipType)}">
-                    ${getMembershipLabel(client.membershipType)}
-                </span>
-            </td>
-            <td>
-                <div class="action-buttons" onclick="event.stopPropagation()">
-                    <button class="action-btn primary" title="Send Nudge" onclick="sendNudge(${client.id})">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
-                            <path d="M22 2 11 13"/>
-                        </svg>
-                    </button>
-                    <button class="action-btn" title="Schedule" onclick="scheduleAppointment(${client.id})">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                    </button>
-                    <button class="action-btn" title="More" onclick="showClientMenu(${client.id})">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"/>
-                            <circle cx="12" cy="5" r="1"/>
-                            <circle cx="12" cy="19" r="1"/>
-                        </svg>
-                    </button>
+                <div class="session-info">
+                    <span class="session-count">${client.remainingSessions !== undefined ? (client.remainingSessions == 999 || String(client.remainingSessions).toLowerCase().includes('unlimited') ? 'Unlimited' : client.remainingSessions) : '-'}</span>
                 </div>
+            </td>
+            <td>
+                <div class="expiry-info ${client.expireDate && new Date(client.expireDate) < new Date() ? 'expired' : ''}">
+                    ${client.expireDate ? formatDate(client.expireDate) : '-'}
+                </div>
+            </td>
+            <td>
+                <span class="package-name" title="${client.packageName || ''}">
+                    ${client.packageName || '-'}
+                </span>
             </td>
         </tr>
     `;
@@ -136,12 +107,7 @@ function createClientTable(clients, options = {}) {
                                 Churn Risk
                                 <span class="sort-icon">↕</span>
                             </th>
-                            <th class="sortable" onclick="sortClients('lastVisit')">
-                                Last Visit
-                                <span class="sort-icon">↕</span>
-                            </th>
                             <th>Membership</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="clients-table-body">
@@ -176,16 +142,6 @@ function createPagination(total, currentPage = 1, perPage = 10) {
     `;
 }
 
-// Action handlers (placeholder functions for future implementation)
-function sendNudge(clientId) {
-    const client = getClientById(clientId);
-    alert(`📤 Sending nudge to ${getClientFullName(client)}...\n\n(AI-powered message will be generated here)`);
-}
-
-function scheduleAppointment(clientId) {
-    const client = getClientById(clientId);
-    alert(`📅 Opening scheduler for ${getClientFullName(client)}...\n\n(Calendar integration will appear here)`);
-}
 
 function showClientMenu(clientId) {
     alert('More options menu coming soon!');

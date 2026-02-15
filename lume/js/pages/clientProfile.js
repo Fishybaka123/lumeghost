@@ -4,19 +4,43 @@
 
 function renderClientProfilePage(clientId) {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
-    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    const client = typeof ClientDataService !== 'undefined' ? ClientDataService.getById(clientId) : getClientById(clientId);
 
     if (!client) {
         return renderNotFoundPage('Client not found');
     }
 
     // Get advanced AI analysis with ML predictions
-    const analysis = AdvancedChurnCalculator ?
+    // Get advanced AI analysis with ML predictions
+    const analysis = typeof AdvancedChurnCalculator !== 'undefined' ?
         AdvancedChurnCalculator.analyze(client) :
-        (ChurnAnalyzer ? ChurnAnalyzer.analyze(client) : { healthScore: client.healthScore, churnRisk: client.churnRisk, riskFactors: [] });
+        (typeof ChurnAnalyzer !== 'undefined' ? ChurnAnalyzer.analyze(client) : { healthScore: client.healthScore, churnRisk: client.churnRisk, riskFactors: [] });
 
     const healthClass = getHealthScoreClass(analysis.healthScore);
     const churnClass = getChurnRiskClass(analysis.churnRisk);
+
+    // Check for pending actions from Dashboard
+    setTimeout(() => {
+        const pendingActionStr = sessionStorage.getItem('lume_pending_action');
+        if (pendingActionStr) {
+            try {
+                const pendingAction = JSON.parse(pendingActionStr);
+                // Only trigger if it matches current client and is recent (last 10s)
+                if (pendingAction.clientId == clientId && (Date.now() - pendingAction.timestamp < 10000)) {
+                    sessionStorage.removeItem('lume_pending_action');
+
+                    if (pendingAction.type === 'send-nudge') {
+                        // Small delay to ensure modal logic is ready
+                        setTimeout(() => sendNudge(clientId), 300);
+                    } else if (pendingAction.type === 'schedule') {
+                        setTimeout(() => scheduleAppointment(clientId), 300);
+                    }
+                }
+            } catch (e) {
+                console.error('Error handling pending action:', e);
+            }
+        }
+    }, 100);
 
     // Calculate expiry info
     let expiryInfo = 'No expiration';
@@ -51,7 +75,7 @@ function renderClientProfilePage(clientId) {
                     </button>
                     
                     <!-- Profile Header -->
-                    <div class="profile-section" style="margin-bottom: var(--spacing-6);">
+                    <div class="profile-section glass-card" style="margin-bottom: var(--spacing-6);">
                         <div class="profile-header-content" style="padding: var(--spacing-6);">
                             <div class="profile-avatar" style="background-color: ${client.avatarColor}">
                                 ${getClientInitials(client)}
@@ -117,7 +141,7 @@ function renderClientProfilePage(clientId) {
                         <!-- Stats Row - Enhanced with Advanced Metrics -->
                         <div class="profile-stats">
                             <!-- Health Score with Gauge -->
-                            <div class="profile-stat highlight" title="Sub-metrics: Engagement ${analysis.healthMetrics?.engagement || analysis.healthScore}, Loyalty ${analysis.healthMetrics?.loyalty || analysis.healthScore}, Satisfaction ${analysis.healthMetrics?.satisfaction || analysis.healthScore}">
+                            <div class="profile-stat highlight" title="Health: ${analysis.healthScore} - ${healthClass === 'good' ? 'Healthy' : healthClass === 'medium' ? 'Needs Attention' : 'At Risk'} due to ${analysis.healthMetrics?.breakdown?.remaining} visits left and ${analysis.healthMetrics?.breakdown?.daysToExpiry} days to expiry">
                                 <div class="health-gauge">
                                     <svg viewBox="0 0 36 36" class="health-gauge-svg">
                                         <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
@@ -135,7 +159,7 @@ function renderClientProfilePage(clientId) {
                             </div>
                             <!-- Sessions Left -->
                             <div class="profile-stat ${client.remainingSessions <= 2 ? 'danger' : client.remainingSessions <= 5 ? 'warning' : 'success'}">
-                                <div class="profile-stat-value">${client.remainingSessions !== undefined ? client.remainingSessions : 'N/A'}</div>
+                                <div class="profile-stat-value">${client.remainingSessions == 999 || String(client.remainingSessions).toLowerCase().includes('unlimited') ? 'Unlimited' : (client.remainingSessions !== undefined ? client.remainingSessions : 'N/A')}</div>
                                 <div class="profile-stat-label">Sessions Left</div>
                             </div>
                             <!-- Predicted Churn Date -->
@@ -156,7 +180,7 @@ function renderClientProfilePage(clientId) {
                         <!-- Left Column -->
                         <div class="left-column">
                             <!-- AI Insights -->
-                            <div class="profile-section" style="margin-bottom: var(--spacing-6);">
+                            <div class="profile-section glass-card" style="margin-bottom: var(--spacing-6);">
                                 <div class="profile-section-header">
                                     <h3 class="profile-section-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -166,46 +190,18 @@ function renderClientProfilePage(clientId) {
                                         </svg>
                                         AI Insights
                                     </h3>
-                                    <span class="badge badge-${analysis.urgency === 'critical' ? 'danger' : analysis.urgency === 'high' ? 'warning' : 'info'}">${analysis.urgency.toUpperCase()}</span>
+                                    <span class="badge badge-${analysis.urgency === 'critical' ? 'danger' : analysis.urgency === 'high' ? 'warning' : 'info'}">${(analysis.urgency || 'low').toUpperCase()}</span>
                                 </div>
                                 <div class="profile-section-content">
                                     ${generateAIInsights(client, analysis)}
                                 </div>
                             </div>
                             
-                            <!-- Risk Factors -->
-                            ${analysis.riskFactors.length > 0 ? `
-                            <div class="profile-section" style="margin-bottom: var(--spacing-6);">
-                                <div class="profile-section-header">
-                                    <h3 class="profile-section-title">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                                            <line x1="12" y1="9" x2="12" y2="13"/>
-                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                        </svg>
-                                        Risk Factors
-                                    </h3>
-                                </div>
-                                <div class="profile-section-content">
-                                    <ul class="risk-factors-list">
-                                        ${analysis.riskFactors.map(factor => `
-                                            <li class="risk-factor-item">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                                                </svg>
-                                                ${factor}
-                                            </li>
-                                        `).join('')}
-                                    </ul>
-                                    <div class="recommendation-box">
-                                        <strong>Recommended Action:</strong> ${analysis.recommendation}
-                                    </div>
-                                </div>
-                            </div>
-                            ` : ''}
+
+
                             
                             <!-- Visit Timeline -->
-                            <div class="profile-section">
+                            <div class="profile-section glass-card">
                                 <div class="profile-section-header">
                                     <h3 class="profile-section-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -240,7 +236,7 @@ function renderClientProfilePage(clientId) {
                         <!-- Right Column -->
                         <div class="right-column">
                             <!-- Quick Actions -->
-                            <div class="profile-section" style="margin-bottom: var(--spacing-6);">
+                            <div class="profile-section glass-card" style="margin-bottom: var(--spacing-6);">
                                 <div class="profile-section-header">
                                     <h3 class="profile-section-title">Quick Actions</h3>
                                 </div>
@@ -286,7 +282,7 @@ function renderClientProfilePage(clientId) {
                             </div>
                             
                             <!-- Notes -->
-                            <div class="profile-section">
+                            <div class="profile-section glass-card">
                                 <div class="profile-section-header">
                                     <h3 class="profile-section-title">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -310,7 +306,7 @@ function renderClientProfilePage(clientId) {
         <!-- Nudge Modal -->
         <div id="nudge-modal" class="modal" style="display: none;">
             <div class="modal-backdrop" onclick="closeNudgeModal()"></div>
-            <div class="modal-content modal-lg">
+            <div class="modal-content modal-lg glass-card">
                 <div class="modal-header">
                     <h3>📨 Personalized Nudge</h3>
                     <button class="modal-close" onclick="closeNudgeModal()">×</button>
@@ -324,7 +320,7 @@ function renderClientProfilePage(clientId) {
         <!-- Schedule Modal -->
         <div id="schedule-modal" class="modal" style="display: none;">
             <div class="modal-backdrop" onclick="closeScheduleModal()"></div>
-            <div class="modal-content">
+            <div class="modal-content glass-card">
                 <div class="modal-header">
                     <h3>📅 Schedule Appointment</h3>
                     <button class="modal-close" onclick="closeScheduleModal()">×</button>
@@ -454,7 +450,7 @@ function sendNudge(clientId) {
                 </div>
                 <div class="nudge-type">
                     <span class="badge badge-${nudge.urgency === 'critical' ? 'danger' : nudge.urgency === 'high' ? 'warning' : 'info'}">
-                        ${nudge.type.replace('-', ' ').toUpperCase()}
+                        ${(nudge.type || 'nudge').replace('-', ' ').toUpperCase()}
                     </span>
                 </div>
             </div>
@@ -465,7 +461,7 @@ function sendNudge(clientId) {
             
             <div class="nudge-channels">
                 <strong>Recommended Channels:</strong>
-                ${nudge.channels.map(ch => `<span class="channel-badge">${ch.toUpperCase()}</span>`).join(' ')}
+                ${(nudge.channels || []).map(ch => `<span class="channel-badge">${(ch || '').toUpperCase()}</span>`).join(' ')}
             </div>
             
             <div class="nudge-message-container">

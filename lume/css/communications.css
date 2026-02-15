@@ -8,7 +8,6 @@
     display: flex;
     gap: var(--spacing-2);
     margin-bottom: var(--spacing-5);
-    background: white;
     padding: 6px;
     border-radius: var(--radius-lg);
     border: 1px solid var(--gray-200);
@@ -61,7 +60,6 @@
     gap: var(--spacing-4);
     padding: var(--spacing-4) var(--spacing-5);
     border-radius: var(--radius-lg);
-    background: white;
     border: 1px solid var(--gray-200);
     box-shadow: var(--shadow);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -136,7 +134,7 @@
 .comm-stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: var(--gray-900);
+    color: var(--gray-100);
 }
 
 /* Filter Bar */
@@ -164,14 +162,16 @@
 .comm-search .input {
     padding-left: 44px;
     width: 100%;
-    border: 1px solid var(--gray-200);
-    background: white;
+    border: 1px solid var(--gray-600);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gray-100);
 }
 
 .channel-select {
     width: 160px;
-    border: 1px solid var(--gray-200);
-    background: white;
+    border: 1px solid var(--gray-600);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gray-100);
 }
 
 /* Main Communication Layout - Two Column */
@@ -184,7 +184,6 @@
 
 /* Messages List Container (Left Panel) */
 .comm-messages-container {
-    background: white;
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
@@ -202,7 +201,7 @@
 .comm-messages-header h3 {
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--gray-700);
+    color: var(--gray-200);
     margin: 0;
 }
 
@@ -265,7 +264,7 @@
 .comm-message-name {
     font-weight: 600;
     font-size: 14px;
-    color: var(--gray-900);
+    color: var(--gray-100);
 }
 
 .comm-message-time {
@@ -333,7 +332,6 @@
 
 /* Conversation View (Right Panel) */
 .comm-conversation-panel {
-    background: white;
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
@@ -531,7 +529,6 @@
 }
 
 .automation-card {
-    background: white;
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-lg);
     padding: var(--spacing-5);

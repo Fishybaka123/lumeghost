@@ -2,6 +2,170 @@
 // CLIENTS LIST PAGE
 // ===========================================
 
+// Add Action Modal
+const actionModalHTML = `
+<div id="smart-action-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-container glass-card" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="action-modal-title">Take Action</h3>
+            <button class="modal-close" onclick="closeActionModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="action-client-info" style="margin-bottom: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <!-- Client Info Populated Here -->
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Action Type</label>
+                <select class="input" id="action-type-select" onchange="updateActionTemplate()">
+                    <option value="nudge">Send Re-engagement Nudge</option>
+                    <option value="discount">Offer Loyalty Discount</option>
+                    <option value="call">Log Call</option>
+                    <option value="note">Add Note</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom: 0;">Message / Notes</label>
+                    <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="generateAISuggestion()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right: 4px;">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        </svg>
+                        Make AI Suggestion
+                    </button>
+                </div>
+                <textarea class="input" id="action-message" rows="4" placeholder="Hi [Name], we missed you..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeActionModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitSmartAction()">Send Action</button>
+        </div>
+    </div>
+</div>
+`;
+
+// Append modal if not exists
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.getElementById('smart-action-modal')) {
+        document.body.insertAdjacentHTML('beforeend', actionModalHTML);
+    }
+});
+
+// Global action functions
+window.openActionModal = function (clientId, title) {
+    let client = null;
+
+    // Try to find client in ClientDataService or window.CLIENTS
+    if (typeof ClientDataService !== 'undefined') {
+        const clients = ClientDataService.getAll();
+        client = clients.find(c => String(c.id) === String(clientId));
+    }
+
+    if (!client && window.CLIENTS) {
+        client = window.CLIENTS.find(c => String(c.id) === String(clientId));
+    }
+
+    if (!client) {
+        console.error('Client not found for action modal:', clientId);
+        return;
+    }
+
+    const modal = document.getElementById('smart-action-modal');
+    const titleEl = document.getElementById('action-modal-title');
+    const infoEl = document.getElementById('action-client-info');
+    const msgEl = document.getElementById('action-message');
+    const typeEl = document.getElementById('action-type-select');
+
+    if (modal) {
+        modal.style.display = 'flex';
+        titleEl.textContent = title || 'Recommended Action';
+
+        infoEl.innerHTML = `
+            <strong>${client.firstName} ${client.lastName}</strong><br>
+            <span style="font-size: 12px; opacity: 0.8">Health: ${client.healthScore || 0} | Last Visit: ${client.lastVisit || 'Unknown'}</span>
+        `;
+
+        // Pre-fill based on title
+        if (title.toLowerCase().includes('nudge')) {
+            typeEl.value = 'nudge';
+            msgEl.value = `Hi ${client.firstName}, we haven't seen you in a while! Come in this week for a complimentary skin analysis.`;
+        } else if (title.toLowerCase().includes('discount')) {
+            typeEl.value = 'discount';
+            msgEl.value = `Hi ${client.firstName}, as a valued member, we'd like to offer you 15% off your next treatment!`;
+        } else {
+            typeEl.value = 'note';
+            msgEl.value = '';
+        }
+
+        window.currentActionClientId = clientId;
+    }
+};
+
+window.updateActionTemplate = function () {
+    const type = document.getElementById('action-type-select').value;
+    // Clearing it allows user to type freely, or they can click AI button
+    // document.getElementById('action-message').value = ''; 
+    // Actually, let's auto-suggest if empty
+    if (document.getElementById('action-message').value.trim() === '') {
+        generateAISuggestion();
+    }
+};
+
+window.generateAISuggestion = function () {
+    const clientId = window.currentActionClientId;
+    const client = window.CLIENTS.find(c => c.id === clientId);
+    const type = document.getElementById('action-type-select').value;
+    const msgEl = document.getElementById('action-message');
+
+    if (!client) return;
+
+    let suggestion = '';
+    const firstName = client.firstName;
+
+    if (type === 'nudge') {
+        const nudges = [
+            `Hi ${firstName}, we miss seeing you at Lume! Book your next appointment this week and receive a complimentary add-on.`,
+            `It's been a while, ${firstName}. Your skin deserves the best! Reply to book your refresh session.`,
+            `Hello ${firstName}, just checking in to see how your results are holding up? Let us know if you're ready for a follow-up.`
+        ];
+        suggestion = nudges[Math.floor(Math.random() * nudges.length)];
+    } else if (type === 'discount') {
+        suggestion = `Hi ${firstName}, as a special treat, enjoy 15% off your next filler or neurotoxin treatment if you book before Friday!`;
+    } else if (type === 'call') {
+        suggestion = `Called to check in on post-treatment progress. Client sounded happy with results.`;
+    } else if (type === 'note') {
+        suggestion = `Client expressed interest in CoolSculpting during last visit. Follow up in 2 weeks.`;
+    }
+
+    msgEl.value = suggestion;
+
+    // Flash effect to show it updated
+    msgEl.style.transition = 'background-color 0.2s';
+    msgEl.style.backgroundColor = 'rgba(79, 125, 243, 0.1)';
+    setTimeout(() => {
+        msgEl.style.backgroundColor = '';
+    }, 300);
+};
+
+window.closeActionModal = function () {
+    const modal = document.getElementById('smart-action-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.submitSmartAction = function () {
+    const clientId = window.currentActionClientId;
+    const type = document.getElementById('action-type-select').value;
+    const msg = document.getElementById('action-message').value;
+
+    // In a real app, this would call an API
+    console.log(`Action submitted for client ${clientId}: ${type} - ${msg}`);
+
+    showToast('Action sent successfully!', 'success');
+    closeActionModal();
+};
+
 function renderClientsPage() {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
@@ -12,21 +176,25 @@ function renderClientsPage() {
     try {
         if (typeof ClientDataService !== 'undefined') {
             clients = ClientDataService.getAll() || [];
-            isImported = ClientDataService.isUsingImportedData();
+            isImported = clients.length > 0;
         } else if (typeof CLIENTS !== 'undefined') {
             clients = CLIENTS || [];
         }
 
-        // Enrich clients with real-time analysis
+        // Enrich clients with real-time analysis (per-client try-catch)
         if (typeof AdvancedChurnCalculator !== 'undefined') {
             clients = clients.map(c => {
-                const analysis = AdvancedChurnCalculator.analyze(c);
-                return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+                try {
+                    const analysis = AdvancedChurnCalculator.analyze(c);
+                    return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+                } catch (e) {
+                    console.warn('Failed to enrich client:', c.id, e);
+                    return c;
+                }
             });
         }
     } catch (e) {
         console.error('Error loading clients:', e);
-        clients = [];
     }
 
     // Sort clients by health score (lowest first = needs most attention)
@@ -51,14 +219,21 @@ function renderClientsPage() {
                             ${isImported ? '<span class="badge badge-success" style="margin-left: 12px;">✓ Using Imported Data</span>' : ''}
                         </div>
                         <div class="page-actions">
-                            <input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;" onchange="handleFileImport(event)">
-                            <button class="btn btn-secondary" onclick="document.getElementById('csv-file-input').click()">
+                            <button class="btn btn-secondary" onclick="refreshClients()" title="Refresh list">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M23 4v6h-6"/>
+                                    <path d="M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                            </button>
+                            <input type="file" id="import-file-input" accept=".csv,.txt,.pdf" style="display: none;" onchange="handleFileImport(event)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('import-file-input').click()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                     <polyline points="17 8 12 3 7 8"/>
                                     <line x1="12" y1="3" x2="12" y2="15"/>
                                 </svg>
-                                Import CSV
+                                Import
                             </button>
                             ${isImported ? `
                                 <button class="btn btn-ghost" onclick="clearImportedData()" title="Reset to demo data">
@@ -83,13 +258,18 @@ function renderClientsPage() {
                     <div class="clients-filters">
                         <div class="filter-pills">
                             <button class="filter-pill active" onclick="setClientFilter('all', this)">All Clients (${clients.length})</button>
-                            <button class="filter-pill" onclick="setClientFilter('healthy', this)">Healthy (${clients.filter(c => c.healthScore >= 70).length})</button>
-                            <button class="filter-pill" onclick="setClientFilter('attention', this)">Needs Attention (${clients.filter(c => c.healthScore >= 40 && c.healthScore < 70).length})</button>
-                            <button class="filter-pill" onclick="setClientFilter('at-risk', this)">At Risk (${clients.filter(c => c.healthScore < 40).length})</button>
+                            <button class="filter-pill" onclick="setClientFilter('healthy', this)">Healthy (${clients.filter(c => c.healthScore >= 75).length})</button>
+                            <button class="filter-pill" onclick="setClientFilter('attention', this)">Needs Attention (${clients.filter(c => c.healthScore >= 50 && c.healthScore < 75).length})</button>
+                            <button class="filter-pill" onclick="setClientFilter('at-risk', this)">At Risk (${clients.filter(c => c.churnRisk >= 40).length})</button>
                             <button class="filter-pill" onclick="setClientFilter('expiring', this)">Expiring Soon (${clients.filter(c => {
         if (!c.expireDate) return false;
         const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
         return days <= 14 && days > 0;
+    }).length})</button>
+                            <button class="filter-pill" onclick="setClientFilter('expired', this)">Expired (${clients.filter(c => {
+        if (!c.expireDate) return false;
+        const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        return days <= 0;
     }).length})</button>
                         </div>
                         
@@ -106,7 +286,7 @@ function renderClientsPage() {
                     </div>
                     
                     <!-- Clients Table -->
-                    <div class="clients-table-container">
+                    <div class="table-container glass-panel">
                         <div class="table-search">
                             <div class="input-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -137,7 +317,6 @@ function renderClientsPage() {
                                         <span class="sort-icon">↕</span>
                                     </th>
                                     <th>Package</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="clients-page-body">
@@ -231,72 +410,82 @@ function renderClientsPage() {
     `;
 }
 
-// Handle CSV file import
-function handleFileImport(event) {
-    console.log('handleFileImport called');
-
+// Handle file import using ImportService
+async function handleFileImport(event) {
     const file = event.target.files[0];
-    if (!file) {
-        console.log('No file selected');
-        return;
-    }
+    if (!file) return;
 
-    console.log('File selected:', file.name);
-
-    // Show loading state
-    showImportModal('loading', `Importing ${file.name}...`);
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const csvText = e.target.result;
-        console.log('File read successfully, length:', csvText.length);
+    // Use ImportService if available
+    if (typeof ImportService !== 'undefined') {
+        showToast('Processing import...', 'info');
 
         try {
-            // Check if required services exist
-            if (typeof CSVParser === 'undefined') {
-                throw new Error('CSVParser not loaded');
-            }
-            if (typeof ClientDataService === 'undefined') {
-                throw new Error('ClientDataService not loaded');
-            }
-
-            const result = ClientDataService.importFromCSV(csvText);
-            console.log('Import result:', result);
+            const result = await ImportService.importFile(file, {
+                onProgress: (p) => console.log('Import progress:', p)
+            });
 
             if (result.success) {
-                showImportModal('success', `Successfully imported ${result.count} clients!`);
-
-                // Refresh the page after a short delay
-                setTimeout(() => {
-                    // Close the modal first
-                    const modal = document.getElementById('import-modal');
-                    if (modal) modal.style.display = 'none';
-
-                    // Force a proper page refresh by reloading the route
-                    router();
-                }, 1500);
+                // Use ImportService's modal if available globally
+                if (typeof showImportPreviewModal === 'function') {
+                    showImportPreviewModal(result);
+                } else {
+                    // Fallback success
+                    showToast(`Imported ${result.validRecords} records successfully`, 'success');
+                    setTimeout(() => router(), 1000);
+                }
             } else {
-                showImportModal('error', `Import failed: ${result.error}`);
+                showToast(`Import failed: ${result.error}`, 'error');
             }
-        } catch (error) {
-            console.error('Import error:', error);
-            showImportModal('error', `Import failed: ${error.message}`);
+        } catch (e) {
+            console.error('Import error:', e);
+            showToast('Import failed: ' + e.message, 'error');
         }
-    };
+    } else {
+        // Fallback to legacy CSV import if ImportService missing
+        console.warn('ImportService not found, falling back to legacy CSV import');
+        handleLegacyCSVImport(file);
+    }
 
-    reader.onerror = function (e) {
-        console.error('FileReader error:', e);
-        showImportModal('error', 'Failed to read file');
-    };
-
-    reader.readAsText(file);
-
-    // Reset the input so the same file can be selected again
+    // Reset input
     event.target.value = '';
 }
 
+function handleLegacyCSVImport(file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const result = ClientDataService.importFromCSV(e.target.result);
+        if (result.success) {
+            showToast(`Imported ${result.count} clients`, 'success');
+            setTimeout(() => router(), 1000);
+        } else {
+            showToast(`Import failed: ${result.error}`, 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Refresh clients list
+function refreshClients() {
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+        // Re-render the whole page content
+        // This is a simple way to refresh. Ideally we might just update the table.
+        // But renderClientsPage returns the full HTML including nav.
+        // We probably just want to update the table or reload the route.
+        if (typeof router === 'function') {
+            router();
+        } else {
+            // Fallback if router not available
+            window.location.reload();
+        }
+        showToast('Client list refreshed', 'success');
+    }
+}
+
 // Make function globally accessible
+window.refreshClients = refreshClients;
 window.handleFileImport = handleFileImport;
+window.closeImportModal = closeImportModal;
 
 // Show import modal with status
 function showImportModal(status, message) {
@@ -382,19 +571,26 @@ function setClientFilter(filter, button) {
 
     switch (filter) {
         case 'healthy':
-            filtered = clients.filter(c => c.healthScore >= 70);
+            filtered = clients.filter(c => c.healthScore >= 75);
             break;
         case 'attention':
-            filtered = clients.filter(c => c.healthScore >= 40 && c.healthScore < 70);
+            filtered = clients.filter(c => c.healthScore >= 50 && c.healthScore < 75);
             break;
         case 'at-risk':
-            filtered = clients.filter(c => c.healthScore < 40);
+            filtered = clients.filter(c => c.churnRisk >= 40);
             break;
         case 'expiring':
             filtered = clients.filter(c => {
                 if (!c.expireDate) return false;
                 const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
                 return days <= 14 && days > 0;
+            });
+            break;
+        case 'expired':
+            filtered = clients.filter(c => {
+                if (!c.expireDate) return false;
+                const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return days <= 0;
             });
             break;
     }
@@ -428,13 +624,13 @@ function filterByMembership(membership) {
     if (currentClientFilter !== 'all') {
         switch (currentClientFilter) {
             case 'healthy':
-                filtered = filtered.filter(c => c.healthScore >= 70);
+                filtered = filtered.filter(c => c.healthScore >= 75);
                 break;
             case 'attention':
-                filtered = filtered.filter(c => c.healthScore >= 40 && c.healthScore < 70);
+                filtered = filtered.filter(c => c.healthScore >= 50 && c.healthScore < 75);
                 break;
             case 'at-risk':
-                filtered = filtered.filter(c => c.healthScore < 40);
+                filtered = filtered.filter(c => c.healthScore < 50);
                 break;
         }
     }
@@ -480,7 +676,36 @@ function sortClientsPage(field) {
             return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
         });
     }
+
+    // Apply current filter
     let sorted = [...clients];
+    if (currentClientFilter !== 'all') {
+        switch (currentClientFilter) {
+            case 'healthy':
+                sorted = sorted.filter(c => c.healthScore >= 75);
+                break;
+            case 'attention':
+                sorted = sorted.filter(c => c.healthScore >= 50 && c.healthScore < 75);
+                break;
+            case 'at-risk':
+                sorted = sorted.filter(c => c.healthScore < 50);
+                break;
+            case 'expiring':
+                sorted = sorted.filter(c => {
+                    if (!c.expireDate) return false;
+                    const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+                    return days <= 14 && days > 0;
+                });
+                break;
+            case 'expired':
+                sorted = sorted.filter(c => {
+                    if (!c.expireDate) return false;
+                    const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+                    return days <= 0;
+                });
+                break;
+        }
+    }
 
     sorted.sort((a, b) => {
         let aVal = a[field];
@@ -499,6 +724,16 @@ function sortClientsPage(field) {
         if (field === 'expireDate') {
             aVal = a.expireDate ? new Date(a.expireDate).getTime() : Infinity;
             bVal = b.expireDate ? new Date(b.expireDate).getTime() : Infinity;
+        }
+
+        // Handle remainingSessions comparison with 'Unlimited'
+        if (field === 'remainingSessions') {
+            const getVal = (v) => {
+                if (v === 'Unlimited' || String(v).toLowerCase().includes('unlimited')) return Infinity;
+                return Number(v) || 0;
+            };
+            aVal = getVal(a[field]);
+            bVal = getVal(b[field]);
         }
 
         return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
@@ -611,7 +846,6 @@ function submitNewClient(event) {
         membershipType,
         remainingSessions: sessions,
         expireDate,
-        lastVisit: new Date().toISOString().split('T')[0],
         nextAppointment: null,
         totalSpend: 0,
         visitCount: 0,
@@ -639,110 +873,41 @@ function submitNewClient(event) {
     }
 }
 
-// Updated client row to show new fields
-function createClientRow(client) {
-    // Defensive null check
-    if (!client) return '';
-
+window.testDatabaseConnection = async function () {
     try {
-        const healthScore = client.healthScore || 50;
-        // Inline health class calculation (function was undefined)
-        const healthClass = healthScore >= 70 ? 'good' : healthScore >= 40 ? 'medium' : 'poor';
-        const remainingSessions = client.remainingSessions !== undefined ? client.remainingSessions : 0;
-        const sessionsClass = remainingSessions <= 2 ? 'low' : remainingSessions <= 5 ? 'medium' : 'high';
+        if (typeof supabase === 'undefined') throw new Error('Supabase not found');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('No active user found');
 
-        let expiryDisplay = 'N/A';
-        let expiryClass = '';
-        if (client.expireDate) {
-            try {
-                const days = Math.ceil((new Date(client.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
-                if (days < 0) {
-                    expiryDisplay = 'Expired';
-                    expiryClass = 'expired';
-                } else if (days <= 7) {
-                    expiryDisplay = `${days}d left`;
-                    expiryClass = 'urgent';
-                } else if (days <= 14) {
-                    expiryDisplay = `${days}d left`;
-                    expiryClass = 'warning';
-                } else {
-                    expiryDisplay = formatDate(client.expireDate);
-                }
-            } catch (e) {
-                expiryDisplay = 'Invalid';
-            }
+        showToast('Testing DB connection...', 'info');
+
+        // Test Insert
+        const testPayload = {
+            user_id: user.id,
+            first_name: "Test",
+            last_name: "Connection",
+            email: `test-${Date.now()}@example.com`,
+            status: "active",
+            membership_type: "Debug Tier",
+            remaining_sessions: 99,
+            created_at: new Date(),
+            updated_at: new Date()
+        };
+
+        const { data, error } = await supabase.from('clients').insert([testPayload]).select();
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            alert("❌ Insert reported success, but no data returned. This usually means Row Level Security (RLS) is blocking you from viewing your own data.");
+        } else {
+            alert(`✅ SUCCESS! Database is working.\nInserted: ${data[0].first_name} ${data[0].last_name}\n\nIf Import still fails, the issue is with the FILE, not the database.`);
+            window.location.reload();
         }
 
-        // Safe getters for client info
-        const firstName = client.firstName || '';
-        const lastName = client.lastName || '';
-        const fullName = (firstName + ' ' + lastName).trim() || client.name || 'Unknown';
-
-        // Calculate initials safely
-        let initials = 'XX';
-        if (firstName && lastName) {
-            initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-        } else if (fullName && fullName !== 'Unknown') {
-            const nameParts = fullName.split(' ').filter(p => p.length > 0);
-            if (nameParts.length >= 2) {
-                initials = (nameParts[0].charAt(0) + nameParts[1].charAt(0)).toUpperCase();
-            } else if (nameParts.length === 1) {
-                initials = nameParts[0].substring(0, 2).toUpperCase();
-            }
-        }
-
-        const avatarColor = client.avatarColor || '#8b5cf6';
-        const email = client.email || '';
-
-        return `
-            <tr class="client-row" onclick="navigateTo('/clients/${client.id}')">
-                <td>
-                    <div class="client-cell">
-                        <div class="client-avatar" style="background-color: ${avatarColor}">
-                            ${initials}
-                        </div>
-                        <div class="client-info">
-                            <span class="client-name">${fullName}</span>
-                            <span class="client-email">${email}</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="health-score ${healthClass}">
-                        <div class="health-bar">
-                            <div class="health-fill" style="width: ${healthScore}%"></div>
-                        </div>
-                        <span>${healthScore}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="sessions-badge ${sessionsClass}">${remainingSessions}</span>
-                </td>
-                <td>
-                    <span class="expiry-badge ${expiryClass}">${expiryDisplay}</span>
-                </td>
-                <td>
-                    <span class="package-name">${client.packageName || client.membershipType || 'None'}</span>
-                </td>
-                <td>
-                    <div class="row-actions" onclick="event.stopPropagation()">
-                        <button class="action-btn" onclick="sendNudge(${client.id})" title="Send Nudge">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn" onclick="navigateTo('/clients/${client.id}')" title="View Profile">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
     } catch (e) {
-        console.error('Error rendering client row:', e, client);
-        return '';
+        alert(`❌ DATABASE ERROR:\n${e.message}\n${e.details || ''}`);
+        console.error(e);
     }
-}
+};
+

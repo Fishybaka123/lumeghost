@@ -55,7 +55,7 @@ function renderCommunicationsPage() {
                     </div>
                     
                     <!-- Tabs -->
-                    <div class="comm-tabs">
+                    <div class="comm-tabs glass-panel">
                         <button class="comm-tab active" onclick="switchCommTab('conversations', this)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -73,7 +73,7 @@ function renderCommunicationsPage() {
                     
                     <!-- Stats Cards -->
                     <div class="comm-stats">
-                        <div class="comm-stat-card blue">
+                        <div class="comm-stat-card glass-card blue">
                             <div class="comm-stat-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -84,7 +84,7 @@ function renderCommunicationsPage() {
                                 <span class="comm-stat-value">${stats.total}</span>
                             </div>
                         </div>
-                        <div class="comm-stat-card cyan">
+                        <div class="comm-stat-card glass-card cyan">
                             <div class="comm-stat-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
@@ -95,7 +95,7 @@ function renderCommunicationsPage() {
                                 <span class="comm-stat-value">${stats.sms}</span>
                             </div>
                         </div>
-                        <div class="comm-stat-card pink">
+                        <div class="comm-stat-card glass-card pink">
                             <div class="comm-stat-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -107,7 +107,7 @@ function renderCommunicationsPage() {
                                 <span class="comm-stat-value">${stats.email}</span>
                             </div>
                         </div>
-                        <div class="comm-stat-card orange">
+                        <div class="comm-stat-card glass-card orange">
                             <div class="comm-stat-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -141,7 +141,7 @@ function renderCommunicationsPage() {
                     </div>
                     
                     <!-- Messages List -->
-                    <div class="comm-messages-container" id="conversations-tab">
+                    <div class="comm-messages-container glass-card" id="conversations-tab">
                         <div class="comm-messages-header">
                             <h3>💬 Recent Conversations</h3>
                         </div>
@@ -152,7 +152,7 @@ function renderCommunicationsPage() {
                     
                     <!-- Automations Tab (hidden by default) -->
                     <div class="comm-automations-container" id="automations-tab" style="display: none;">
-                        <div class="automation-card">
+                        <div class="automation-card glass-card">
                             <div class="automation-header">
                                 <h3>📅 Expiring Package Reminder</h3>
                                 <label class="toggle-switch">
@@ -165,7 +165,7 @@ function renderCommunicationsPage() {
                                 <span>Sent this month: 12</span>
                             </div>
                         </div>
-                        <div class="automation-card">
+                        <div class="automation-card glass-card">
                             <div class="automation-header">
                                 <h3>⚠️ Low Sessions Alert</h3>
                                 <label class="toggle-switch">
@@ -178,7 +178,7 @@ function renderCommunicationsPage() {
                                 <span>Sent this month: 8</span>
                             </div>
                         </div>
-                        <div class="automation-card">
+                        <div class="automation-card glass-card">
                             <div class="automation-header">
                                 <h3>👋 Re-engagement Campaign</h3>
                                 <label class="toggle-switch">
@@ -220,24 +220,35 @@ function renderCommunicationsPage() {
                 </div>
                 <div class="modal-body">
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Select Client</label>
-                        <select id="new-msg-client" class="input" style="width: 100%; padding: 10px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
-                            <option value="">-- Select a Client --</option>
-                        </select>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" style="font-weight: 500; color: var(--gray-200);">Select Recipients</label>
+                            <span id="selected-count-badge" style="font-size: 12px; color: var(--gray-400);">0 selected</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="toggleClientPicker()" id="select-more-btn" style="font-size: 12px; padding: 6px 14px;">Select More</button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="selectAllClients()" style="font-size: 12px; padding: 6px 14px;">Select All</button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="deselectAllClients()" style="font-size: 12px; padding: 6px 14px;">Deselect All</button>
+                        </div>
+                        <div id="client-picker-list" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--gray-600); border-radius: var(--radius-md); background: rgba(0,0,0,0.2); display: none;">
+                            <!-- Client checkboxes inserted here -->
+                        </div>
+                        <div id="selected-clients-tags" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                            <!-- Selected client tags shown here -->
+                        </div>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Message Type</label>
+                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-200);">Message Type</label>
                         <div class="type-selector" style="display: flex; gap: 8px;">
-                            <button type="button" class="type-btn active" onclick="setMsgType('sms', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">SMS</button>
-                            <button type="button" class="type-btn" onclick="setMsgType('email', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Email</button>
-                            <button type="button" class="type-btn" onclick="setMsgType('note', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Internal Note</button>
+                            <button type="button" class="type-btn active" onclick="setMsgType('sms', this)" style="padding: 8px 16px; border: 1px solid var(--gray-600); border-radius: 20px; background: rgba(255,255,255,0.1); color: var(--gray-200); cursor: pointer;">SMS</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('email', this)" style="padding: 8px 16px; border: 1px solid var(--gray-600); border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--gray-200); cursor: pointer;">Email</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('note', this)" style="padding: 8px 16px; border: 1px solid var(--gray-600); border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--gray-200); cursor: pointer;">Internal Note</button>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label class="form-label" style="font-weight: 500;">Message Content</label>
+                            <label class="form-label" style="font-weight: 500; color: var(--gray-200);">Message Content</label>
                             <button type="button" class="btn btn-sm" onclick="generateAIMessage()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
                                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -245,7 +256,7 @@ function renderCommunicationsPage() {
                                 AI Generate
                             </button>
                         </div>
-                        <textarea id="new-msg-content" class="input" rows="5" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-family: inherit; resize: vertical;"></textarea>
+                        <textarea id="new-msg-content" class="input" rows="5" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--gray-600); border-radius: var(--radius-md); font-family: inherit; resize: vertical; background: rgba(0,0,0,0.2); color: var(--gray-100);"></textarea>
                     </div>
 
                     <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
@@ -261,22 +272,115 @@ function renderCommunicationsPage() {
 // Global variable for current message type
 let currentMsgType = 'sms';
 
+// Track selected clients for mass messaging
+let selectedMessageClients = new Set();
+
 function openNewMessageModal() {
     const modal = document.getElementById('new-message-modal');
-    const select = document.getElementById('new-msg-client');
+    selectedMessageClients.clear();
 
-    // Populate clients
-    if (select && ClientDataService) {
+    // Populate client checkboxes
+    const listEl = document.getElementById('client-picker-list');
+    if (listEl && ClientDataService) {
         const clients = ClientDataService.getAll();
-        select.innerHTML = '<option value="">-- Select a Client --</option>' +
-            clients.map(c => `<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
+        listEl.innerHTML = clients.map(c => `
+            <label style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05);" 
+                   onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'">
+                <input type="checkbox" value="${c.id}" onchange="toggleClientSelection('${c.id}', '${(c.firstName || '').replace(/'/g, '')} ${(c.lastName || '').replace(/'/g, '')}', this.checked)" 
+                       style="accent-color: #6366f1; width: 16px; height: 16px;">
+                <span style="color: var(--gray-100); font-size: 13px;">${c.firstName} ${c.lastName}</span>
+                <span style="color: var(--gray-500); font-size: 11px; margin-left: auto;">${c.email || ''}</span>
+            </label>
+        `).join('');
     }
 
-    // Reset form
+    // Reset
     document.getElementById('new-msg-content').value = '';
-    setMsgType('sms', document.querySelector('.type-btn')); // Reset to SMS
+    document.getElementById('selected-clients-tags').innerHTML = '';
+    document.getElementById('client-picker-list').style.display = 'none';
+    updateSelectedCount();
+    setMsgType('sms', document.querySelector('.type-btn'));
 
     if (modal) modal.style.display = 'flex';
+}
+
+function toggleClientPicker() {
+    const list = document.getElementById('client-picker-list');
+    if (list) {
+        list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function toggleClientSelection(clientId, clientName, checked) {
+    if (checked) {
+        selectedMessageClients.add(clientId);
+    } else {
+        selectedMessageClients.delete(clientId);
+    }
+    updateSelectedTags();
+    updateSelectedCount();
+}
+
+function selectAllClients() {
+    const checkboxes = document.querySelectorAll('#client-picker-list input[type=checkbox]');
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+        selectedMessageClients.add(cb.value);
+    });
+    updateSelectedTags();
+    updateSelectedCount();
+    // Show the list so user can see
+    document.getElementById('client-picker-list').style.display = 'block';
+}
+
+function deselectAllClients() {
+    const checkboxes = document.querySelectorAll('#client-picker-list input[type=checkbox]');
+    checkboxes.forEach(cb => cb.checked = false);
+    selectedMessageClients.clear();
+    updateSelectedTags();
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const badge = document.getElementById('selected-count-badge');
+    if (badge) {
+        const count = selectedMessageClients.size;
+        badge.textContent = count === 0 ? '0 selected' : `${count} selected`;
+        badge.style.color = count > 0 ? '#6366f1' : 'var(--gray-400)';
+    }
+}
+
+function updateSelectedTags() {
+    const container = document.getElementById('selected-clients-tags');
+    if (!container) return;
+
+    const clients = ClientDataService ? ClientDataService.getAll() : [];
+    const selected = clients.filter(c => selectedMessageClients.has(String(c.id)));
+
+    if (selected.length === 0) {
+        container.innerHTML = '<span style="color: var(--gray-500); font-size: 12px;">No recipients selected</span>';
+        return;
+    }
+
+    const maxShow = 8;
+    const tags = selected.slice(0, maxShow).map(c => `
+        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 12px;">
+            ${c.firstName} ${c.lastName}
+            <span onclick="removeClientSelection('${c.id}')" style="cursor: pointer; font-size: 14px; line-height: 1;">&times;</span>
+        </span>
+    `).join('');
+
+    const extra = selected.length > maxShow ? `<span style="color: var(--gray-400); font-size: 12px;">+${selected.length - maxShow} more</span>` : '';
+    container.innerHTML = tags + extra;
+}
+
+function removeClientSelection(clientId) {
+    selectedMessageClients.delete(clientId);
+    // Uncheck the checkbox
+    const cb = document.querySelector(`#client-picker-list input[value="${clientId}"]`);
+    if (cb) cb.checked = false;
+    updateSelectedTags();
+    updateSelectedCount();
 }
 
 function closeNewMessageModal() {
@@ -349,11 +453,10 @@ function generateAIMessage() {
 }
 
 function sendNewMessage() {
-    const clientId = document.getElementById('new-msg-client').value;
     const content = document.getElementById('new-msg-content').value;
 
-    if (!clientId) {
-        showToast('Please select a client', 'error');
+    if (selectedMessageClients.size === 0) {
+        showToast('Please select at least one recipient', 'error');
         return;
     }
 
@@ -366,11 +469,15 @@ function sendNewMessage() {
         let metadata = {};
         if (currentMsgType === 'email') metadata.subject = 'New Message';
 
-        CommunicationService.log(clientId, currentMsgType, content, metadata);
+        let sentCount = 0;
+        selectedMessageClients.forEach(clientId => {
+            CommunicationService.log(clientId, currentMsgType, content, metadata);
+            sentCount++;
+        });
 
-        showToast('Message sent successfully', 'success');
+        showToast(`Message sent to ${sentCount} client${sentCount > 1 ? 's' : ''} successfully`, 'success');
         closeNewMessageModal();
-        refreshCommunications(); // Update the list
+        refreshCommunications();
     }
 }
 

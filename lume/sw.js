@@ -2,7 +2,7 @@
 // LUME SERVICE WORKER - PWA OFFLINE SUPPORT
 // ===========================================
 
-const CACHE_NAME = 'lume-v1.0.0';
+const CACHE_NAME = 'lume-v1.0.1';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use

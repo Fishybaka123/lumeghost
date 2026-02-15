@@ -13,7 +13,7 @@ function renderOperationsPage() {
             
             <main class="main-content" id="main-content">
                 <div class="page-content center-content" style="display: flex; align-items: center; justify-content: center; height: calc(100vh - 80px);">
-                    <div class="empty-state-card" style="max-width: 500px; border: none; box-shadow: var(--shadow-lg);">
+                    <div class="empty-state-card glass-card" style="max-width: 500px; border: none; box-shadow: var(--shadow-lg);">
                         <div class="empty-state-icon" style="background: var(--primary-50); color: var(--primary);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>

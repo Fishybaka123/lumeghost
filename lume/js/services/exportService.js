@@ -95,7 +95,6 @@ const ExportService = {
                 { key: 'membershipTier', label: 'Membership' },
                 { key: 'healthScore', label: 'Health Score' },
                 { key: 'churnRisk', label: 'Churn Risk %' },
-                { key: 'lastVisit', label: 'Last Visit', formatter: v => this.formatDate(v) },
                 { key: 'totalSpent', label: 'Total Spent', formatter: v => `$${(v || 0).toLocaleString()}` },
                 { key: 'visitCount', label: 'Visit Count' },
                 { key: 'treatments', label: 'Treatments', formatter: v => (v || []).join('; ') }
@@ -183,7 +182,7 @@ const ExportService = {
                     columns: [
                         { key: 'name', label: 'Name', width: 25 },
                         { key: 'churnRisk', label: 'Churn Risk %', width: 15 },
-                        { key: 'lastVisit', label: 'Last Visit', width: 15 },
+                        { key: 'churnRisk', label: 'Churn Risk %', width: 15 },
                         { key: 'healthScore', label: 'Health Score', width: 12 }
                     ]
                 }
@@ -267,7 +266,7 @@ const ExportService = {
                     type: 'table',
                     title: 'At-Risk Clients Requiring Attention',
                     data: atRisk.slice(0, 10),
-                    columns: ['name', 'churnRisk', 'lastVisit', 'healthScore']
+                    columns: ['name', 'churnRisk', 'healthScore']
                 },
                 {
                     type: 'chart',

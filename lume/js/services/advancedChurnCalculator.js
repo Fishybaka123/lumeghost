@@ -15,99 +15,145 @@ const AdvancedChurnCalculator = {
     analyze(client) {
         const startTime = performance.now();
 
-        // Check cache
-        const cacheKey = `${client.id}_${JSON.stringify(client)}`;
-        const cached = this._getFromCache(cacheKey);
-        if (cached) return cached;
+        try {
+            // Validate dates before processing
+            if (client.expireDate && isNaN(new Date(client.expireDate).getTime())) {
+                console.warn('Invalid expireDate detected in analyze:', client.expireDate, client);
+                // Fix it or ignore it to prevent crash
+                client.expireDate = null;
+            }
 
-        // Calculate all metrics
-        const healthMetrics = this.calculateHealthMetrics(client);
-        const churnPrediction = this.predictChurn(client, healthMetrics);
-        const ltvProjection = this.calculateLTV(client, churnPrediction);
-        const riskBreakdown = this.calculateRiskBreakdown(client);
-        const retentionActions = this.getRetentionActions(client, churnPrediction, riskBreakdown);
+            // Check cache
+            const cacheKey = `${client.id}_${JSON.stringify(client)}`;
+            const cached = this._getFromCache(cacheKey);
+            if (cached) return cached;
 
-        const result = {
-            // Core scores
-            healthScore: healthMetrics.overall,
-            churnRisk: Math.round(churnPrediction.probability * 100),
+            // Calculate all metrics
+            const healthMetrics = this.calculateHealthMetrics(client);
+            const churnPrediction = this.predictChurn(client, healthMetrics);
+            const ltvProjection = this.calculateLTV(client, churnPrediction);
+            const riskBreakdown = this.calculateRiskBreakdown(client);
+            const retentionActions = this.getRetentionActions(client, churnPrediction, riskBreakdown);
 
-            // Sub-metrics
-            healthMetrics: {
-                engagement: healthMetrics.engagement,
-                loyalty: healthMetrics.loyalty,
-                satisfaction: healthMetrics.satisfaction,
-                overall: healthMetrics.overall
-            },
+            const result = {
+                // Core scores
+                healthScore: healthMetrics.overall,
+                churnRisk: Math.round(churnPrediction.probability * 100),
 
-            // Churn prediction
-            churnPrediction: {
-                probability: churnPrediction.probability,
-                predictedDate: churnPrediction.predictedDate,
-                confidenceInterval: churnPrediction.confidenceInterval,
-                daysUntilChurn: churnPrediction.daysUntilChurn,
-                confidence: churnPrediction.confidence
-            },
+                // Sub-metrics
+                healthMetrics: {
+                    engagement: healthMetrics.engagement,
+                    loyalty: healthMetrics.loyalty,
+                    satisfaction: healthMetrics.satisfaction,
+                    overall: healthMetrics.overall
+                },
 
-            // LTV
-            lifetime: {
-                currentLTV: ltvProjection.currentLTV,
-                projectedLTV: ltvProjection.projectedLTV,
-                churnAdjustedLTV: ltvProjection.churnAdjustedLTV,
-                monthlyValue: ltvProjection.monthlyValue,
-                confidenceRange: ltvProjection.confidenceRange
-            },
+                // Churn prediction
+                churnPrediction: {
+                    probability: churnPrediction.probability,
+                    predictedDate: churnPrediction.predictedDate,
+                    confidenceInterval: churnPrediction.confidenceInterval,
+                    daysUntilChurn: churnPrediction.daysUntilChurn,
+                    confidence: churnPrediction.confidence
+                },
 
-            // Risk factors
-            riskBreakdown: riskBreakdown,
+                // LTV
+                lifetime: {
+                    currentLTV: ltvProjection.currentLTV,
+                    projectedLTV: ltvProjection.projectedLTV,
+                    churnAdjustedLTV: ltvProjection.churnAdjustedLTV,
+                    monthlyValue: ltvProjection.monthlyValue,
+                    confidenceRange: ltvProjection.confidenceRange
+                },
 
-            // Recommendations
-            retentionActions: retentionActions,
+                // Risk factors
+                riskBreakdown: riskBreakdown,
 
-            // Legacy compatibility
-            riskFactors: riskBreakdown.factors.map(f => f.description),
-            urgency: this._determineUrgency(churnPrediction.probability),
-            recommendation: retentionActions[0]?.action || 'Maintain regular engagement',
+                // Recommendations
+                retentionActions: retentionActions,
 
-            // Meta
-            calculatedAt: new Date().toISOString(),
-            executionTimeMs: Math.round(performance.now() - startTime)
-        };
+                // Legacy compatibility
+                riskFactors: riskBreakdown.factors.map(f => f.description),
+                urgency: this._determineUrgency(churnPrediction.probability),
+                recommendation: retentionActions[0]?.action || 'Maintain regular engagement',
 
-        // Cache result
-        this._setCache(cacheKey, result);
+                // Meta
+                calculatedAt: new Date().toISOString(),
+                executionTimeMs: Math.round(performance.now() - startTime)
+            };
 
-        return result;
+            // Cache result
+            this._setCache(cacheKey, result);
+
+            return result;
+        } catch (error) {
+            console.error('Churn Analysis Failed:', error);
+            // Return safe fallback
+            return {
+                healthScore: 50,
+                churnRisk: 0,
+                healthMetrics: { overall: 50 },
+                churnPrediction: { probability: 0, confidence: 'low' },
+                riskBreakdown: { totalRisk: 0, factors: [] },
+                retentionActions: []
+            };
+        }
     },
 
     /**
      * Calculate health sub-metrics
      */
+    /**
+     * Calculate health sub-metrics based on Weighted Formula:
+     * 60% Remaining Visits (Engagement)
+     * 40% Expiration Proximity (Loyalty/Retention)
+     */
     calculateHealthMetrics(client) {
-        // Engagement Score (0-100)
-        // Based on: visit frequency, session usage rate, time since last visit
-        const engagement = this._calculateEngagement(client);
+        // 1. Engagement Score (Remaining Visits) - 60% Weight
+        // Benchmark: 8-12 visits/year. Full points for 12+ visits.
+        let remaining = client.remainingSessions !== undefined ? client.remainingSessions : 0;
+        let engagementScore = 0;
 
-        // Loyalty Score (0-100)
-        // Based on: tenure, renewal history, membership tier, referrals
-        const loyalty = this._calculateLoyalty(client);
+        if (remaining === -1 || remaining === 999 || String(remaining).toLowerCase().includes('unlimited')) {
+            engagementScore = 100;
+        } else {
+            // Linear scale: 0 visits = 0, 12 visits = 100
+            engagementScore = Math.min(Number(remaining) || 0, 12) / 12 * 100;
+        }
 
-        // Satisfaction Score (0-100)
-        // Inferred from: visit patterns, no-shows, spending trends
-        const satisfaction = this._calculateSatisfaction(client);
+        // 2. Loyalty Score (Expiration Proximity) - 40% Weight
+        // >90 days = 100% (Low Risk)
+        // <30 days = 0% (High Risk)
+        // 30-90 days = Linear scale
+        let daysToExpiry = 0;
+        if (client.expireDate) {
+            daysToExpiry = Math.ceil((new Date(client.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        }
 
-        // Overall health: weighted average
-        const overall = Math.round(
-            engagement * 0.35 +
-            loyalty * 0.35 +
-            satisfaction * 0.30
-        );
+        let loyaltyScore = 0;
+        if (daysToExpiry > 90) {
+            loyaltyScore = 100;
+        } else if (daysToExpiry < 30) {
+            loyaltyScore = 0;
+        } else {
+            // Scale between 30 (0%) and 90 (100%)
+            loyaltyScore = ((daysToExpiry - 30) / (90 - 30)) * 100;
+        }
+
+        // 3. Overall Weighted Score
+        // 60% Engagement + 40% Loyalty
+        const overall = Math.round((engagementScore * 0.6) + (loyaltyScore * 0.4));
 
         return {
-            engagement: Math.round(engagement),
-            loyalty: Math.round(loyalty),
-            satisfaction: Math.round(satisfaction),
-            overall: Math.max(0, Math.min(100, overall))
+            engagement: Math.round(engagementScore),
+            loyalty: Math.round(loyaltyScore),
+            satisfaction: 85, // Placeholder/Legacy
+            overall: overall,
+            // Meta for tooltips
+            breakdown: {
+                remaining: remaining,
+                daysToExpiry: daysToExpiry
+            }
         };
     },
 
@@ -117,18 +163,7 @@ const AdvancedChurnCalculator = {
     _calculateEngagement(client) {
         let score = 50; // Base score
 
-        // Visit recency impact (-30 to +20)
-        if (client.lastVisit) {
-            const daysSince = this._daysSince(client.lastVisit);
-            if (daysSince <= 7) score += 20;
-            else if (daysSince <= 14) score += 15;
-            else if (daysSince <= 30) score += 10;
-            else if (daysSince <= 60) score -= 10;
-            else if (daysSince <= 90) score -= 20;
-            else score -= 30;
-        } else {
-            score -= 25;
-        }
+        // Base score
 
         // Session usage rate (-20 to +20)
         if (client.remainingSessions !== undefined && client.totalSessions) {
@@ -205,15 +240,7 @@ const AdvancedChurnCalculator = {
         else if (missedRatio >= 0.1) score -= 8;
         else if (missedRatio === 0 && visits >= 5) score += 10;
 
-        // Visit frequency consistency
-        if (client.lastVisit) {
-            const avgDaysBetween = client.avgDaysBetweenVisits || 30;
-            const daysSinceLastVisit = this._daysSince(client.lastVisit);
-
-            if (daysSinceLastVisit > avgDaysBetween * 2) score -= 15;
-            else if (daysSinceLastVisit > avgDaysBetween * 1.5) score -= 8;
-            else if (daysSinceLastVisit <= avgDaysBetween) score += 10;
-        }
+        // Spending trend (if available)
 
         // Spending trend (if available)
         if (client.spendingTrend === 'increasing') score += 15;
@@ -256,11 +283,11 @@ const AdvancedChurnCalculator = {
             factors.loyaltyRisk * 0.15;
 
         // Apply seasonal factor
-        const seasonalAdjustment = MarketBenchmarks?.getCurrentSeasonalFactor() || 1.0;
+        const seasonalAdjustment = (typeof MarketBenchmarks !== 'undefined') ? MarketBenchmarks.getCurrentSeasonalFactor() : 1.0;
         let probability = baseProbability * seasonalAdjustment;
 
         // Apply segment-specific baseline
-        const segmentBaseline = MarketBenchmarks?.getSegmentChurnRate(client.membershipType) || 0.35;
+        const segmentBaseline = (typeof MarketBenchmarks !== 'undefined') ? MarketBenchmarks.getSegmentChurnRate(client.membershipType) : 0.35;
         probability = (probability * 0.7) + (segmentBaseline * 0.3);
 
         // Cap at 0-1
@@ -363,14 +390,16 @@ const AdvancedChurnCalculator = {
      */
     calculateLTV(client, churnPrediction) {
         // Current LTV (actual spend)
+        const avgSessionValue = (typeof MarketBenchmarks !== 'undefined') ? MarketBenchmarks.AVERAGE_SESSION_VALUE : 285;
         const currentLTV = client.totalSpend ||
-            (client.visitCount || 0) * MarketBenchmarks.AVERAGE_SESSION_VALUE;
+            (client.visitCount || 0) * avgSessionValue;
 
         // Monthly value estimation
         const visitCount = client.visitCount || 0;
         const tenureMonths = client.joinDate ? this._monthsSince(client.joinDate) : 3;
+        const avgLtvYearly = (typeof MarketBenchmarks !== 'undefined') ? MarketBenchmarks.AVERAGE_LTV_YEARLY : 1200;
         const monthlyValue = tenureMonths > 0 ? currentLTV / tenureMonths :
-            MarketBenchmarks.AVERAGE_LTV_YEARLY / 12;
+            avgLtvYearly / 12;
 
         // Projected 12-month LTV (assuming no churn)
         const projectedLTV = currentLTV + (monthlyValue * 12);
@@ -440,8 +469,8 @@ const AdvancedChurnCalculator = {
             score: engagementScore,
             contribution: engagementScore * weights.engagementDecline,
             description: engagementScore > 0.5 ?
-                'Declining engagement detected' :
-                'Good engagement levels'
+                'Low engagement detected' :
+                'Consistent engagement'
         });
 
         // Expiration proximity (15%)
@@ -516,15 +545,14 @@ const AdvancedChurnCalculator = {
      * Score engagement decline
      */
     _scoreEngagementDecline(client) {
-        if (!client.lastVisit) return 0.70;
+        // Recency-independent engagement score
+        let riskScore = 0.3; // Default medium risk
 
-        const daysSince = this._daysSince(client.lastVisit);
-        if (daysSince >= 90) return 0.90;
-        if (daysSince >= 60) return 0.70;
-        if (daysSince >= 45) return 0.50;
-        if (daysSince >= 30) return 0.30;
-        if (daysSince >= 14) return 0.15;
-        return 0.05;
+        if (client.visitCount >= 20) riskScore = 0.05;
+        else if (client.visitCount >= 10) riskScore = 0.15;
+        else if (client.visitCount < 2) riskScore = 0.60;
+
+        return riskScore;
     },
 
     /**
@@ -630,20 +658,7 @@ const AdvancedChurnCalculator = {
             }
         }
 
-        // Engagement-related actions
-        if (client.lastVisit) {
-            const daysSince = this._daysSince(client.lastVisit);
-            if (daysSince >= 30) {
-                actions.push({
-                    action: 'Send personalized check-in nudge',
-                    type: 'nudge',
-                    expectedImpact: Math.round((successRates.personalizedNudge || 0.32) * 100),
-                    priority: daysSince >= 60 ? 'high' : 'medium',
-                    timing: daysSince >= 60 ? 'Within 24 hours' : 'Within 1 week',
-                    description: 'Personalized message to re-engage the client'
-                });
-            }
-        }
+        // VIP upgrade opportunity
 
         // VIP upgrade opportunity
         if (client.membershipType !== 'vip' &&

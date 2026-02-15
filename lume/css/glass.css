@@ -1,0 +1,143 @@
+/* ===========================================
+   LIQUID GLASS DESIGN SYSTEM v2.0
+   Authentic Apple Glassmorphism (macOS / visionOS)
+   =========================================== */
+
+:root {
+    /* DEFAULT (LIGHT MODE) - "Apple Liquid Glass" */
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border-color: rgba(255, 255, 255, 0.4);
+    --glass-blur: blur(20px);
+    --glass-shadow-color: rgba(0, 0, 0, 0.05);
+    --glass-text-main: #1d1d1f;
+    --glass-text-sub: #86868b;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* DARK MODE - "Apple Smoked Glass" */
+        --glass-bg: rgba(30, 30, 35, 0.70);
+        --glass-border-color: rgba(255, 255, 255, 0.12);
+        --glass-blur: blur(25px);
+        --glass-shadow-color: rgba(0, 0, 0, 0.3);
+        --glass-text-main: #ffffff;
+        --glass-text-sub: #ebebf599;
+        /* Apple's semantic gray for dark mode */
+    }
+}
+
+/* Force Dark Mode overrides if data-theme is present */
+[data-theme="dark"] {
+    --glass-bg: rgba(30, 30, 35, 0.70);
+    --glass-border-color: rgba(255, 255, 255, 0.12);
+    --glass-blur: blur(25px);
+    --glass-shadow-color: rgba(0, 0, 0, 0.3);
+    --glass-text-main: #ffffff;
+    --glass-text-sub: #ebebf599;
+}
+
+/* Base Glass Class - The "Material" */
+.glass-panel,
+.glass-card,
+.card,
+.dashboard-card,
+.metric-card,
+.settings-section,
+.clients-table-container,
+.client-profile-header,
+.profile-section {
+    background: var(--glass-bg) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
+    border: 1px solid var(--glass-border-color) !important;
+    box-shadow: 0 4px 24px -1px var(--glass-shadow-color) !important;
+    color: var(--glass-text-main);
+    transition: transform 0.2s ease, background 0.3s ease;
+}
+
+/* Hover Effect for Interactivity */
+.glass-card:hover,
+.dashboard-card:hover,
+.metric-card:hover {
+    background: var(--glass-bg) !important;
+    /* Keep same base, maybe slightly lighter? */
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px var(--glass-shadow-color) !important;
+}
+
+/* Inner Elements Transparency Fixes */
+.glass-card h1,
+.glass-card h2,
+.glass-card h3,
+.dashboard-card h1,
+.dashboard-card h2,
+.dashboard-card h3 {
+    color: var(--glass-text-main) !important;
+}
+
+.glass-card p,
+.glass-card span,
+.glass-card label,
+.dashboard-card p,
+.dashboard-card span,
+.dashboard-card label {
+    color: var(--glass-text-main) !important;
+    /* Fallback */
+}
+
+/* Specific overrides for text secondary */
+.text-muted,
+.text-secondary,
+.input-label {
+    color: var(--glass-text-sub) !important;
+}
+
+/* Input Fields - Glassy Inputs */
+input,
+select,
+textarea,
+.input {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid var(--glass-border-color) !important;
+    color: var(--glass-text-main) !important;
+    backdrop-filter: blur(10px);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: var(--primary-400, #0d7a8c) !important;
+    outline: none;
+}
+
+/* Mesh Gradient Background - FIXED POSITON */
+.mesh-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background:
+        radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+        radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+    background-size: 200% 200%;
+    animation: meshFlow 20s ease infinite;
+}
+
+@keyframes meshFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}

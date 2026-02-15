@@ -968,3 +968,125 @@
 .app-layout-topnav .empty-table-message {
     color: var(--nav-text-secondary) !important;
 }
+
+/* ===========================================
+   USER MENU DROPDOWN
+   =========================================== */
+
+.user-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 240px;
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.user-menu-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.user-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 4px;
+}
+
+.user-avatar.large {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+}
+
+.user-menu-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.user-menu-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nav-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-menu-email {
+    font-size: 11px;
+    color: var(--nav-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-menu-divider {
+    height: 1px;
+    background: var(--nav-border);
+    margin: 4px 8px;
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: var(--nav-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.user-menu-item a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.user-menu-item:hover {
+    background: var(--nav-surface-hover);
+    color: var(--nav-text-primary);
+}
+
+.user-menu-item.logout:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
+/* Form Styles Removal (just in case refs exist) */
+.user-menu-form {
+    display: none;
+}

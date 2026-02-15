@@ -4,14 +4,36 @@
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('🌟 Lume - Med Spa Client Retention Platform');
-    console.log('Version: 1.0.0 (MVP)');
+    try {
+        console.log('🌟 Lume - Med Spa Client Retention Platform');
+        console.log('Version: 1.0.0 (MVP)');
 
-    // Initialize router
-    router();
+        // Initialize router
+        if (typeof router === 'function') {
+            router();
+        } else {
+            console.error('Router function not initialized');
+            document.body.innerHTML = '<div style="color:red; padding: 20px;">Error: Router not initialized. Please refresh.</div>';
+        }
 
-    // Set up global event listeners
-    initializeGlobalListeners();
+        // Set up global event listeners
+        initializeGlobalListeners();
+    } catch (e) {
+        console.error('App initialization error:', e);
+        document.body.innerHTML = `<div style="color:red; padding: 20px;">
+            <h3>Application Error</h3>
+            <pre>${e.message}\n${e.stack}</pre>
+        </div>`;
+    }
+});
+
+// Global error handler for uncaught exceptions
+window.addEventListener('error', function (event) {
+    console.error('Global error:', event.error);
+    // Don't overwrite if we already have content, just toast
+    if (typeof showToast === 'function') {
+        showToast(`Error: ${event.message}`, 'error');
+    }
 });
 
 function initializeGlobalListeners() {
@@ -39,6 +61,28 @@ function initializeGlobalListeners() {
             closeDropdowns();
         }
     });
+
+    // Listen for data load events to refresh UI
+    window.addEventListener('lume-clients-loaded', function (e) {
+        console.log('🔄 Data loaded, refreshing UI...');
+
+        // Refresh metrics if available
+        if (typeof refreshMetrics === 'function') {
+            refreshMetrics();
+        }
+
+        // Re-render current route to show new data
+        if (typeof router === 'function') {
+            router();
+        }
+    });
+
+    // Check if data is ALREADY loaded (race condition fix)
+    if (window.ClientDataService && window.ClientDataService.isInitialized && window.ClientDataService.isInitialized()) {
+        console.log('🔄 Data already loaded, force refreshing...');
+        if (typeof refreshMetrics === 'function') refreshMetrics();
+        if (typeof router === 'function') router();
+    }
 }
 
 function closeAnyModals() {
@@ -154,40 +198,5 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// Demo mode banner
-function showDemoModeBanner() {
-    if (!document.querySelector('.demo-banner')) {
-        const banner = document.createElement('div');
-        banner.className = 'demo-banner';
-        banner.style.cssText = `
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #0d7a8c 0%, #074954 100%);
-            color: white;
-            padding: 12px 20px;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        `;
-        banner.innerHTML = `
-            <span>🚀 You're viewing Lume in demo mode with sample data</span>
-            <button onclick="this.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Dismiss</button>
-        `;
-        document.body.appendChild(banner);
-    }
-}
-
-// Show demo banner on dashboard load
-window.addEventListener('hashchange', function () {
-    if (window.location.hash === '#/dashboard') {
-        setTimeout(showDemoModeBanner, 1000);
-    }
-});
 
 console.log('✅ Lume app initialized');

@@ -10,7 +10,6 @@
 .analytics-empty-state {
     text-align: center;
     padding: 80px 40px;
-    background: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
 }
@@ -102,7 +101,6 @@
 }
 
 .analytics-metric {
-    background: white;
     border-radius: var(--radius-lg);
     padding: var(--spacing-5);
     box-shadow: var(--shadow);
@@ -187,7 +185,6 @@
 }
 
 .analytics-card {
-    background: white;
     border-radius: var(--radius-lg);
     padding: var(--spacing-5);
     box-shadow: var(--shadow);
@@ -506,7 +503,6 @@
     gap: var(--spacing-3);
     padding: var(--spacing-4);
     border-radius: var(--radius-lg);
-    background: white;
     box-shadow: var(--shadow);
     border-left: 4px solid;
 }
@@ -580,6 +576,94 @@
     font-size: 11px;
     color: var(--gray-400);
     white-space: nowrap;
+}
+
+/* Expiring Clients List */
+.expiring-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.expiring-client-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--gray-600);
+    transition: background 0.2s;
+}
+
+.expiring-client-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.expiring-client-row.critical {
+    border-left-color: #ef4444;
+}
+
+.expiring-client-row.warning {
+    border-left-color: #f59e0b;
+}
+
+.expiring-client-row.low {
+    border-left-color: #3b82f6;
+}
+
+.expiring-client-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.expiring-client-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-100);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expiring-client-pkg {
+    font-size: 11px;
+    color: var(--gray-400);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expiring-days {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.expiring-days.critical {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.expiring-days.warning {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.expiring-days.low {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.expiring-more {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-top: 4px;
 }
 
 /* Responsive */

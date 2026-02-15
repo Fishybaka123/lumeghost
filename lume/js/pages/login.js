@@ -53,7 +53,7 @@ function renderLoginPage() {
             </div>
             
             <div class="login-form-container">
-                <div class="login-card">
+                <div class="login-card glass-card">
                     <!-- Tab Toggle -->
                     <div class="auth-tabs">
                         <button class="auth-tab active" id="login-tab" onclick="switchAuthTab('login')">Sign In</button>
@@ -282,8 +282,12 @@ async function handleRegister(event) {
         const result = await AuthService.register(name, email, password);
 
         if (result.success) {
-            showToast('✓ Check your email for the verification code!', 'success');
-            showVerificationSection(email);
+            showToast('✓ Account created! Signing you in...', 'success');
+            // Auto login usually handled by Supabase session handling
+            // But we can force navigation just in case
+            setTimeout(() => {
+                navigateTo('/dashboard');
+            }, 1500);
         }
     } catch (error) {
         showToast(error.message || 'Registration failed', 'error');

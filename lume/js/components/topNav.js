@@ -5,10 +5,12 @@
 // ===========================================
 
 function createTopNav(activePage = 'dashboard') {
-    const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
+    const user = (window.AuthService && window.AuthService.getCurrentUser()) ||
+        JSON.parse(sessionStorage.getItem('lume_user')) ||
+        { name: 'Admin', initials: 'AD', businessName: 'Lume MedSpa' };
 
     return `
-        <header class="top-nav" role="banner">
+        <header class="top-nav glass-panel" role="banner">
             <a href="#main-content" class="skip-link">Skip to main content</a>
             
             <!-- Left Section: Back + Forward + Hamburger + Logo -->
@@ -67,7 +69,7 @@ function createTopNav(activePage = 'dashboard') {
                 <!-- <button class="nav-icon-btn theme-toggle" ...> -->
                 
                 <!-- Search -->
-                <button class="nav-icon-btn" onclick="openSearchModal()" aria-label="Search">
+                <button class="nav-icon-btn" onclick="if(window.GlobalSearch) GlobalSearch.open()" aria-label="Search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="11" cy="11" r="8"/>
                         <path d="m21 21-4.35-4.35"/>
@@ -86,28 +88,13 @@ function createTopNav(activePage = 'dashboard') {
                     <button class="user-avatar-btn" onclick="toggleUserMenu()" aria-label="User menu" aria-haspopup="true">
                         <div class="user-avatar">${user.initials}</div>
                     </button>
-                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                    <div class="user-menu-dropdown glass-panel" id="user-menu-dropdown" onclick="event.stopPropagation()">
                         <div class="user-menu-header">
                             <div class="user-avatar large">${user.initials}</div>
                             <div class="user-menu-info">
                                 <span class="user-menu-name">${user.name || 'Admin'}</span>
                                 <span class="user-menu-email">${user.email || 'admin@lume.com'}</span>
                             </div>
-                        </div>
-                        <div class="user-menu-form">
-                            <div class="user-menu-field">
-                                <label>Name</label>
-                                <input type="text" id="user-name-input" value="${user.name || 'Admin'}" placeholder="Your name">
-                            </div>
-                            <div class="user-menu-field">
-                                <label>Company</label>
-                                <input type="text" id="user-company-input" value="${user.company || 'Lume MedSpa'}" placeholder="Company name">
-                            </div>
-                            <div class="user-menu-field">
-                                <label>Email</label>
-                                <input type="email" id="user-email-input" value="${user.email || 'admin@lume.com'}" placeholder="Email address">
-                            </div>
-                            <button class="btn btn-primary btn-sm" onclick="saveUserProfile()">Save Changes</button>
                         </div>
                         <div class="user-menu-divider"></div>
                         <a href="#/settings" class="user-menu-item" onclick="closeUserMenu()">
@@ -132,7 +119,7 @@ function createTopNav(activePage = 'dashboard') {
         
         <!-- Mobile Side Menu -->
         <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
-        <aside class="mobile-menu" role="navigation" aria-label="Mobile navigation">
+        <aside class="mobile-menu glass-panel" role="navigation" aria-label="Mobile navigation">
             <div class="mobile-menu-header">
                 <span class="mobile-menu-title">LUME</span>
                 <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">
@@ -201,160 +188,6 @@ function closeMobileMenu() {
     if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
-function openSearchModal() {
-    // Create search modal if it doesn't exist
-    let modal = document.getElementById('search-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'search-modal';
-        modal.className = 'search-modal-overlay';
-        modal.innerHTML = `
-            <div class="search-modal">
-                <div class="search-modal-header">
-                    <div class="search-input-wrapper">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="m21 21-4.35-4.35"/>
-                        </svg>
-                        <input type="text" id="global-search-input" placeholder="Search clients, memberships, dates..." autofocus>
-                        <kbd>ESC</kbd>
-                    </div>
-                </div>
-                <div class="search-results" id="search-results">
-                    <div class="search-hint">
-                        <p>Search by:</p>
-                        <ul>
-                            <li><strong>Name</strong> - client name</li>
-                            <li><strong>Email</strong> - email address</li>
-                            <li><strong>Phone</strong> - phone number</li>
-                            <li><strong>Membership</strong> - VIP, Premium, Basic</li>
-                            <li><strong>Treatment</strong> - treatment type</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        // Close on overlay click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeSearchModal();
-        });
-
-        // Search input handler
-        const input = document.getElementById('global-search-input');
-        input.addEventListener('input', (e) => performGlobalSearch(e.target.value));
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeSearchModal();
-            if (e.key === 'Enter') {
-                const firstResult = document.querySelector('.search-result-item');
-                if (firstResult) firstResult.click();
-            }
-        });
-    }
-
-    modal.classList.add('active');
-    document.getElementById('global-search-input').value = '';
-    document.getElementById('global-search-input').focus();
-    document.getElementById('search-results').innerHTML = `
-        <div class="search-hint">
-            <p>Search by:</p>
-            <ul>
-                <li><strong>Name</strong> - client name</li>
-                <li><strong>Email</strong> - email address</li>
-                <li><strong>Phone</strong> - phone number</li>
-                <li><strong>Membership</strong> - VIP, Premium, Basic</li>
-                <li><strong>Treatment</strong> - treatment type</li>
-            </ul>
-        </div>
-    `;
-}
-
-function closeSearchModal() {
-    const modal = document.getElementById('search-modal');
-    if (modal) modal.classList.remove('active');
-}
-
-function performGlobalSearch(query) {
-    const resultsContainer = document.getElementById('search-results');
-    if (!query || query.length < 2) {
-        resultsContainer.innerHTML = `
-            <div class="search-hint">
-                <p>Type at least 2 characters to search...</p>
-            </div>
-        `;
-        return;
-    }
-
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
-    const q = query.toLowerCase();
-
-    const results = clients.filter(client => {
-        // Search across all relevant fields
-        const searchableFields = [
-            client.name,
-            client.email,
-            client.phone,
-            client.membershipTier,
-            client.treatment,
-            client.lastVisit,
-            client.expireDate,
-            client.notes,
-            String(client.healthScore),
-            String(client.churnRisk)
-        ].filter(Boolean).map(f => String(f).toLowerCase());
-
-        return searchableFields.some(field => field.includes(q));
-    }).slice(0, 10); // Limit to 10 results
-
-    if (results.length === 0) {
-        resultsContainer.innerHTML = `
-            <div class="search-no-results">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                </svg>
-                <p>No results found for "${query}"</p>
-            </div>
-        `;
-        return;
-    }
-
-    resultsContainer.innerHTML = results.map(client => `
-        <div class="search-result-item" onclick="goToClient(${client.id}); closeSearchModal();">
-            <div class="search-result-avatar">${getInitials(client.name)}</div>
-            <div class="search-result-info">
-                <div class="search-result-name">${highlightMatch(client.name, q)}</div>
-                <div class="search-result-details">
-                    ${client.email ? `<span>${highlightMatch(client.email, q)}</span>` : ''}
-                    ${client.membershipTier ? `<span class="membership-tag">${client.membershipTier}</span>` : ''}
-                    ${client.treatment ? `<span>${client.treatment}</span>` : ''}
-                </div>
-            </div>
-            <div class="search-result-meta">
-                <span class="health-indicator ${getHealthClass(client.healthScore)}">${client.healthScore || 0}</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function highlightMatch(text, query) {
-    if (!text) return '';
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
-}
-
-function getInitials(name) {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function getHealthClass(score) {
-    if (score >= 70) return 'healthy';
-    if (score >= 40) return 'warning';
-    return 'at-risk';
-}
-
 function goToClient(clientId) {
     navigateTo(`/clients/${clientId}`);
 }
@@ -373,15 +206,19 @@ function closeUserMenu() {
     }
 }
 
-function saveUserProfile() {
+async function saveUserProfile() {
     const name = document.getElementById('user-name-input')?.value || 'Admin';
-    const company = document.getElementById('user-company-input')?.value || 'Lume MedSpa';
+    const businessName = document.getElementById('user-company-input')?.value || 'Lume MedSpa';
     const email = document.getElementById('user-email-input')?.value || 'admin@lume.com';
+
+    if (window.AuthService) {
+        await window.AuthService.updateProfile(name, businessName);
+    }
 
     // Generate initials from name
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD';
 
-    const user = { name, company, email, initials };
+    const user = { name, businessName, email, initials };
     sessionStorage.setItem('lume_user', JSON.stringify(user));
 
     // Update avatar display
@@ -396,6 +233,12 @@ function saveUserProfile() {
 
     const emailDisplay = document.querySelector('.user-menu-email');
     if (emailDisplay) emailDisplay.textContent = email;
+
+    // Update dashboard greeting if on that page
+    const dashboardGreeting = document.getElementById('dashboard-greeting');
+    if (dashboardGreeting) {
+        dashboardGreeting.textContent = `Welcome back, ${businessName}! 👋`;
+    }
 
     showToast('✓ Profile saved!', 'success');
     closeUserMenu();
@@ -496,8 +339,8 @@ function trackNavigation(path) {
 window.createTopNav = createTopNav;
 window.toggleMobileMenu = toggleMobileMenu;
 window.closeMobileMenu = closeMobileMenu;
-window.openSearchModal = openSearchModal;
-window.closeSearchModal = closeSearchModal;
+window.openSearchModal = () => { if (window.GlobalSearch) GlobalSearch.open(); };
+window.closeSearchModal = () => { if (window.GlobalSearch) GlobalSearch.close(); };
 window.toggleUserMenu = toggleUserMenu;
 window.closeUserMenu = closeUserMenu;
 window.saveUserProfile = saveUserProfile;

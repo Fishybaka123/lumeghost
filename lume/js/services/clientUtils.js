@@ -42,8 +42,8 @@ function getClientInitials(client) {
 
 // Get health score class for styling
 function getHealthScoreClass(score) {
-    if (score >= 70) return 'good';
-    if (score >= 40) return 'medium';
+    if (score >= 75) return 'good';
+    if (score >= 50) return 'medium';
     return 'poor';
 }
 
@@ -148,6 +148,15 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+// Generate consistent avatar color based on name
+function generateAvatarColor(firstName, lastName) {
+    const colors = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#06b6d4', '#ec4899', '#84cc16', '#a855f7', '#14b8a6'];
+    const charCode1 = firstName ? firstName.charCodeAt(0) : 0;
+    const charCode2 = lastName ? lastName.charCodeAt(0) : 0;
+    const colorIndex = (charCode1 + charCode2) % colors.length;
+    return colors[colorIndex];
+}
+
 // Expose functions globally
 window.getClientFullName = getClientFullName;
 window.getClientInitials = getClientInitials;
@@ -159,3 +168,4 @@ window.formatDate = formatDate;
 window.getRelativeTime = getRelativeTime;
 window.getClientById = getClientById;
 window.showToast = showToast;
+window.generateAvatarColor = generateAvatarColor;

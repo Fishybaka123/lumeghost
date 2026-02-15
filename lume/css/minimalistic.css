@@ -683,6 +683,56 @@ html[data-theme="light"] .clients-table td {
     border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* AI Suggestion Buttons */
+.ai-suggestion-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    background: var(--min-surface);
+    color: var(--min-text-secondary);
+}
+
+.ai-suggestion-btn svg {
+    flex-shrink: 0;
+}
+
+.ai-suggestion-btn.suggestion-good {
+    color: var(--min-success) !important;
+    background: rgba(63, 185, 80, 0.05) !important;
+    border-color: rgba(63, 185, 80, 0.1) !important;
+}
+
+.ai-suggestion-btn.suggestion-action {
+    color: var(--min-accent) !important;
+    background: var(--min-accent-muted) !important;
+    border-color: var(--min-accent-muted) !important;
+}
+
+.ai-suggestion-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ai-suggestion-btn.suggestion-action:hover {
+    background: var(--min-accent) !important;
+    color: white !important;
+    border-color: var(--min-accent) !important;
+}
+
+.ai-suggestion-btn.suggestion-good:hover {
+    background: var(--min-success) !important;
+    color: white !important;
+    border-color: var(--min-success) !important;
+}
+
 
 /* Force global overrides when minimalistic theme is active */
 body {
@@ -1288,13 +1338,13 @@ html[data-theme="light"] .nav-icon-btn {
 
 .user-menu-name {
     font-weight: 600;
-    color: var(--min-text) !important;
+    color: #000000 !important;
     font-size: 14px;
 }
 
 .user-menu-email {
     font-size: 12px;
-    color: var(--min-text-muted) !important;
+    color: #333333 !important;
 }
 
 .user-menu-form {
@@ -1320,10 +1370,10 @@ html[data-theme="light"] .nav-icon-btn {
 
 .user-menu-field input {
     padding: 8px 10px;
-    background: var(--min-bg) !important;
-    border: 1px solid var(--min-border) !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 6px;
-    color: var(--min-text) !important;
+    color: #000000 !important;
     font-size: 13px;
 }
 

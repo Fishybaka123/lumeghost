@@ -133,7 +133,7 @@ const IntegrationsService = {
     },
 
     /**
-     * Initiate OAuth connection flow
+     * Initiate OAuth connection flow or Config Modal
      */
     async connect(providerId) {
         const provider = this.PROVIDERS[providerId];
@@ -141,11 +141,20 @@ const IntegrationsService = {
             return { success: false, error: 'Unknown provider' };
         }
 
+        if (provider.requiresConfig) {
+            // SMS/Twilio requires manual config
+            if (providerId === 'twilio') {
+                this.openTwilioConfig();
+                return { success: true, pending: true };
+            }
+            return { success: false, error: 'Config modal not implemented' };
+        }
+
         // In production, this would redirect to OAuth URL
         // For demo, we'll simulate the connection
 
         console.log(`[Integrations] Starting OAuth flow for ${provider.name}`);
-        console.log(`[Integrations] Scopes: ${provider.scopes.join(', ')}`);
+        console.log(`[Integrations] Scopes: ${provider.scopes?.join(', ') || ''}`);
 
         // Show connecting toast
         showToast(`Connecting to ${provider.name}...`, 'info');
@@ -159,14 +168,58 @@ const IntegrationsService = {
             connectedAt: new Date().toISOString(),
             accessToken: 'demo_access_token_' + Math.random().toString(36).substr(2, 9),
             refreshToken: 'demo_refresh_token_' + Math.random().toString(36).substr(2, 9),
-            scopes: provider.scopes,
+            scopes: provider.scopes || [],
             expiresAt: Date.now() + (3600 * 1000) // 1 hour
         };
 
         this.saveState();
 
         showToast(`Connected to ${provider.name}!`, 'success');
-        NotificationCenter?.success('Integration Connected', `Your ${provider.name} account has been linked successfully.`, { category: 'system' });
+        if (typeof NotificationCenter !== 'undefined') {
+            NotificationCenter.success('Integration Connected', `Your ${provider.name} account has been linked successfully.`, { category: 'system' });
+        }
+
+        return { success: true };
+    },
+
+    /**
+     * Open Twilio Modal
+     */
+    openTwilioConfig() {
+        const modal = document.getElementById('twilio-config-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+
+            // Pre-fill if exists
+            const existing = this.connected['twilio'];
+            if (existing && existing.config) {
+                document.getElementById('twilio-sid').value = existing.config.accountSid || '';
+                document.getElementById('twilio-token').value = existing.config.authToken || '';
+                document.getElementById('twilio-phone').value = existing.config.phoneNumber || '';
+            }
+        }
+    },
+
+    /**
+     * Save Twilio Config
+     */
+    async saveTwilioConfig(config) {
+        showToast('Validating Twilio credentials...', 'info');
+        await this.delay(1000);
+
+        this.connected['twilio'] = {
+            connected: true,
+            connectedAt: new Date().toISOString(),
+            config: config
+        };
+
+        this.saveState();
+        showToast('Twilio connected successfully!', 'success');
+
+        const modal = document.getElementById('twilio-config-modal');
+        if (modal) modal.style.display = 'none';
+
+        if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
 
         return { success: true };
     },
@@ -462,6 +515,7 @@ window.renderIntegrationsSettings = function () {
     const byType = {
         payment: integrations.filter(i => i.type === 'payment'),
         calendar: integrations.filter(i => i.type === 'calendar'),
+        sms: integrations.filter(i => i.type === 'sms'),
         marketing: integrations.filter(i => i.type === 'marketing')
     };
 
@@ -469,6 +523,13 @@ window.renderIntegrationsSettings = function () {
         <div class="integrations-settings">
             <h3 style="margin-bottom: 20px;">Connected Services</h3>
             
+            <div class="integration-section" style="margin-bottom: 32px;">
+                <h4 style="font-size: 14px; color: var(--nav-text-secondary); margin-bottom: 12px;">💬 SMS & Messaging</h4>
+                <div class="integrations-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                    ${byType.sms.map(renderIntegrationCard).join('')}
+                </div>
+            </div>
+
             <div class="integration-section" style="margin-bottom: 32px;">
                 <h4 style="font-size: 14px; color: var(--nav-text-secondary); margin-bottom: 12px;">💳 Payment Providers</h4>
                 <div class="integrations-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">

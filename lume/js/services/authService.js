@@ -1,401 +1,212 @@
 // ===========================================
-// AUTH SERVICE - Development Bypass Mode
+// AUTH SERVICE - SUPABASE INTEGRATION
 // ===========================================
-// 
-// ⚠️ DEV MODE ENABLED: Any email/password works
-// 
-// To re-enable REAL authentication:
-// 1. Set DEV_BYPASS_AUTH = false below
-// 2. Start the backend server: node server/server.js
-// 3. Add your SendGrid API key in server/.env
-//
-// ===========================================
-
-const DEV_BYPASS_AUTH = true;  // ← Set to FALSE to enable real auth
-
-const API_BASE = 'http://localhost:3001/api';
 
 const AuthService = {
-    // Store for pending verification
-    _pendingEmail: null,
-    _pendingName: null,
+    // Current user state
+    _currentUser: null,
 
-    // Get stored token
-    getToken() {
-        return localStorage.getItem('lume_token');
-    },
+    // Initialize
+    async init() {
+        if (!supabase) return;
 
-    // Set token
-    setToken(token) {
-        if (token) {
-            localStorage.setItem('lume_token', token);
-        } else {
-            localStorage.removeItem('lume_token');
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+            this._currentUser = session.user;
+            await this._fetchUserProfile(session.user.id);
+            console.log('✅ User authenticated:', session.user.email);
         }
-    },
 
-    // Get current user from storage
-    getCurrentUser() {
-        const userStr = localStorage.getItem('lume_user');
-        if (userStr) {
-            try {
-                return JSON.parse(userStr);
-            } catch {
-                return null;
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                this._currentUser = session.user;
+                await this._fetchUserProfile(session.user.id);
+                // Trigger global event
+                window.dispatchEvent(new CustomEvent('lume:auth:login', { detail: session.user }));
+            } else if (event === 'SIGNED_OUT') {
+                this._currentUser = null;
+                localStorage.removeItem('lume_user');
+                sessionStorage.removeItem('lume_authenticated');
+                // Trigger global event
+                window.dispatchEvent(new CustomEvent('lume:auth:logout'));
             }
-        }
-        return null;
+        });
     },
 
-    // Set current user
-    setCurrentUser(user) {
-        if (user) {
-            localStorage.setItem('lume_user', JSON.stringify(user));
-            // Set authentication flag that router checks
-            sessionStorage.setItem('lume_authenticated', 'true');
-            // Also set user in session for backward compatibility
-            sessionStorage.setItem('lume_user', JSON.stringify({
-                name: user.name,
-                email: user.email,
-                initials: user.name.split(' ').map(n => n[0]).join('').toUpperCase()
-            }));
-        } else {
-            localStorage.removeItem('lume_user');
-            sessionStorage.removeItem('lume_user');
-            sessionStorage.removeItem('lume_authenticated');
+    // Get current user object (normalized)
+    getCurrentUser() {
+        if (!this._currentUser) {
+            // Fallback to storage for rapid UI rendering
+            const stored = localStorage.getItem('lume_user');
+            return stored ? JSON.parse(stored) : null;
         }
+
+        // Return normalized user object
+        return {
+            id: this._currentUser.id,
+            email: this._currentUser.email,
+            name: this._currentUser.user_metadata?.full_name || this._currentUser.email.split('@')[0],
+            businessName: this._currentUser.user_metadata?.business_name || 'My Med Spa',
+            initials: this._getInitials(this._currentUser.user_metadata?.full_name || this._currentUser.email),
+            metadata: this._currentUser.user_metadata
+        };
     },
 
-    // Check if user is logged in
-    isLoggedIn() {
-        return !!this.getToken() && !!this.getCurrentUser();
+    // Login with password
+    async login(email, password, rememberMe = false) {
+        if (!supabase) return { success: false, error: 'Supabase not initialized' };
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            // Session persistence is handled automatically by Supabase client
+            // but we can set a flag for our own app logic
+            if (rememberMe) {
+                localStorage.setItem('lume_remember_me', 'true');
+            } else {
+                localStorage.removeItem('lume_remember_me');
+            }
+
+            // Profile fetch happens in onAuthStateChange
+            // Profile fetch happens in onAuthStateChange
+
+            // Log security event
+            if (window.SecurityService) {
+                window.SecurityService.logAction('login', 'auth', { email, rememberMe });
+            }
+
+            return { success: true, user: data.user };
+
+        } catch (error) {
+            console.error('Login error:', error);
+            if (error.message.includes('Invalid login credentials')) {
+                throw new Error('Incorrect email or password');
+            }
+            if (error.message.includes('Email not confirmed')) {
+                throw new Error('Please confirm your email or disable Email Confirmation in Supabase settings.');
+            }
+            throw error;
+        }
     },
 
     // Register new account
     async register(name, email, password) {
-        // DEV BYPASS: Skip real registration
-        if (DEV_BYPASS_AUTH) {
-            const user = { id: 1, email, name, verified: true };
-            this.setToken('dev_bypass_token_' + Date.now());
-            this.setCurrentUser(user);
-            return { success: true, user };
-        }
+        if (!supabase) return { success: false, error: 'Supabase not initialized' };
 
         try {
-            const response = await fetch(`${API_BASE}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name,
+                        business_name: 'My Med Spa' // Default
+                    }
+                }
             });
 
-            const data = await response.json();
+            if (error) throw error;
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Registration failed');
+            // If email confirmation is disabled in Supabase, user is signed in immediately
+            if (data.session) {
+                return { success: true, user: data.user };
             }
 
-            this._pendingEmail = email;
-            this._pendingName = name;
+            // If email confirmation IS enabled, data.user is null/session is null
+            // Check if user object exists but no session (confirmation required)
+            if (data.user && !data.session) {
+                return {
+                    success: true,
+                    message: 'Please check your email to verify your account.',
+                    needsVerification: true
+                };
+            }
 
-            return {
-                success: true,
-                message: data.message,
-                needsVerification: true
-            };
+            return { success: true, user: data.user };
+
         } catch (error) {
             console.error('Registration error:', error);
             throw error;
         }
     },
 
-    // Verify email with code
-    async verifyEmail(code) {
-        // DEV BYPASS: Skip verification
-        if (DEV_BYPASS_AUTH) {
-            return { success: true };
-        }
-
-        const email = this._pendingEmail;
-
-        if (!email) {
-            throw new Error('No pending verification. Please register first.');
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, code })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Verification failed');
-            }
-
-            this.setToken(data.token);
-            this.setCurrentUser(data.user);
-
-            this._pendingEmail = null;
-            this._pendingName = null;
-
-            return {
-                success: true,
-                user: data.user
-            };
-        } catch (error) {
-            console.error('Verification error:', error);
-            throw error;
-        }
-    },
-
-    // Resend verification code
-    async resendCode() {
-        // DEV BYPASS: Just return success
-        if (DEV_BYPASS_AUTH) {
-            return { success: true };
-        }
-
-        const email = this._pendingEmail;
-
-        if (!email) {
-            throw new Error('No pending verification');
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/resend-code`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to resend code');
-            }
-
-            return { success: true };
-        } catch (error) {
-            console.error('Resend code error:', error);
-            throw error;
-        }
-    },
-
-    // Login
-    async login(email, password, rememberMe = false) {
-        // DEV BYPASS: Accept any email/password
-        if (DEV_BYPASS_AUTH) {
-            const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-            const user = { id: 1, email, name, verified: true };
-            this.setToken('dev_bypass_token_' + Date.now());
-            this.setCurrentUser(user);
-            return { success: true, user };
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, rememberMe })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.needsVerification) {
-                    this._pendingEmail = data.email;
-                    return {
-                        success: false,
-                        needsVerification: true,
-                        message: data.error
-                    };
-                }
-                throw new Error(data.error || 'Login failed');
-            }
-
-            this.setToken(data.token);
-            this.setCurrentUser(data.user);
-
-            return {
-                success: true,
-                user: data.user
-            };
-        } catch (error) {
-            console.error('Login error:', error);
-            throw error;
-        }
-    },
-
     // Logout
     async logout() {
-        // DEV BYPASS: Just clear local storage
-        if (DEV_BYPASS_AUTH) {
-            this.setToken(null);
-            this.setCurrentUser(null);
+        if (!supabase) return;
+
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+
+            // Log security event
+            if (window.SecurityService) {
+                window.SecurityService.logAction('logout', 'auth');
+            }
+
             return { success: true };
-        }
-
-        const token = this.getToken();
-
-        if (token) {
-            try {
-                await fetch(`${API_BASE}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            } catch (err) {
-                console.log('Logout request failed, clearing local state anyway');
-            }
-        }
-
-        this.setToken(null);
-        this.setCurrentUser(null);
-
-        return { success: true };
-    },
-
-    // Get current user from server
-    async fetchCurrentUser() {
-        // DEV BYPASS: Return stored user
-        if (DEV_BYPASS_AUTH) {
-            return this.getCurrentUser();
-        }
-
-        const token = this.getToken();
-
-        if (!token) {
-            return null;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                this.setToken(null);
-                this.setCurrentUser(null);
-                return null;
-            }
-
-            const data = await response.json();
-            this.setCurrentUser(data.user);
-
-            return data.user;
         } catch (error) {
-            console.error('Fetch user error:', error);
-            return null;
+            console.error('Logout error:', error);
+            // Force local cleanup anyway
+            this._currentUser = null;
+            localStorage.removeItem('lume_user');
+            return { success: true }; // UI should still proceed
         }
     },
 
-    // Update profile
-    async updateProfile(name, businessName) {
-        // DEV BYPASS: Update local storage directly
-        if (DEV_BYPASS_AUTH) {
-            const user = this.getCurrentUser();
-            if (user) {
-                user.name = name;
-                user.businessName = businessName;
-                this.setCurrentUser(user);
-            }
-            return { success: true, user };
-        }
-
-        const token = this.getToken();
-
-        if (!token) {
-            throw new Error('Not authenticated');
-        }
+    // Reset Password Request
+    async requestPasswordReset(email) {
+        if (!supabase) return;
 
         try {
-            const response = await fetch(`${API_BASE}/auth/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ name, businessName })
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/#reset-password',
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to update profile');
-            }
-
-            this.setCurrentUser(data.user);
-
-            return { success: true, user: data.user };
+            if (error) throw error;
+            return { success: true };
         } catch (error) {
-            console.error('Update profile error:', error);
+            console.error('Reset password error:', error);
             throw error;
         }
     },
 
-    // Change password
-    async changePassword(currentPassword, newPassword) {
-        // DEV BYPASS: Just return success
-        if (DEV_BYPASS_AUTH) {
-            return { success: true };
-        }
+    // Fetch and cache user profile
+    async _fetchUserProfile(userId) {
+        // We don't necessarily need to fetch from 'profiles' table if metadata is enough
+        // But for completeness let's store a normalized object in localStorage
+        const user = {
+            id: userId,
+            email: this._currentUser.email,
+            name: this._currentUser.user_metadata?.full_name,
+            businessName: this._currentUser.user_metadata?.business_name,
+            initials: this._getInitials(this._currentUser.user_metadata?.full_name)
+        };
 
-        const token = this.getToken();
-
-        if (!token) {
-            throw new Error('Not authenticated');
-        }
-
-        try {
-            const response = await fetch(`${API_BASE}/auth/password`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ currentPassword, newPassword })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to change password');
-            }
-
-            return { success: true };
-        } catch (error) {
-            console.error('Change password error:', error);
-            throw error;
-        }
+        localStorage.setItem('lume_user', JSON.stringify(user));
+        sessionStorage.setItem('lume_authenticated', 'true');
+        return user;
     },
 
-    // Set pending email
-    setPendingEmail(email) {
-        this._pendingEmail = email;
-    },
-
-    // Get pending email
-    getPendingEmail() {
-        return this._pendingEmail;
+    // Helper: Get initials
+    _getInitials(name) {
+        if (!name) return 'XX';
+        const parts = name.split(' ').filter(p => p.length > 0);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return parts[0].substring(0, 2).toUpperCase();
     }
 };
 
-// Check authentication on page load
-window.addEventListener('DOMContentLoaded', async () => {
-    if (DEV_BYPASS_AUTH) {
-        console.log('⚠️ DEV MODE: Authentication bypass enabled. Any email/password works.');
-    }
-
-    if (AuthService.getToken()) {
-        const user = await AuthService.fetchCurrentUser();
-        if (user) {
-            console.log('✅ User authenticated:', user.email);
-        }
-    }
+// Initialize on load
+window.addEventListener('DOMContentLoaded', () => {
+    AuthService.init();
 });

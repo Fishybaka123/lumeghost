@@ -16,7 +16,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Lume">
     <meta name="msapplication-TileColor" content="#0A2540">
-    <meta name="msapplication-config" content="browserconfig.xml">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -43,15 +42,21 @@
     <link rel="stylesheet" href="css/operations.css">
     <link rel="stylesheet" href="css/modals.css">
     <link rel="stylesheet" href="css/top-nav.css">
-    <link rel="stylesheet" href="css/minimalistic.css">
+    <link rel="stylesheet" href="css/top-nav.css">
+    <link rel="stylesheet" href="css/glass.css">
 </head>
 
 <body>
+    <div class="mesh-background"></div>
     <div id="app"></div>
 
-    <!-- Services (load first) -->
+    <!-- Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabaseClient.js"></script>
+
+    <!-- Services (No Dependency) -->
     <script src="js/services/clientUtils.js"></script>
-    <script src="js/services/csvParser.js"></script>
     <script src="js/services/marketBenchmarks.js"></script>
     <script src="js/services/advancedChurnCalculator.js"></script>
     <script src="js/services/churnAnalyzer.js"></script>
@@ -59,7 +64,9 @@
     <script src="js/services/clientDataService.js"></script>
     <script src="js/services/communicationService.js"></script>
     <script src="js/services/authService.js"></script>
+    <script src="js/services/securityService.js"></script>
     <script src="js/services/themeService.js"></script>
+    <script src="js/pages/securityDashboard.js"></script>
     <script src="js/services/exportService.js"></script>
     <script src="js/services/importService.js"></script>
     <script src="js/services/mfaService.js"></script>
@@ -76,7 +83,7 @@
     <script src="js/components/topNav.js"></script>
     <script src="js/components/header.js"></script>
     <script src="js/components/metricCard.js"></script>
-    <script src="js/components/clientTable.js"></script>
+    <script src="js/components/clientTable.js?v=2"></script>
     <script src="js/components/notificationCenter.js"></script>
     <script src="js/components/globalSearch.js"></script>
     <script src="js/pages/login.js"></script>

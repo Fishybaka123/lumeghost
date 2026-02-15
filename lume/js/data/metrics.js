@@ -5,10 +5,20 @@
 
 // Helper to calculate metrics from actual clients
 function calculateMetrics() {
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : CLIENTS;
+    let clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : CLIENTS;
+
+    // Enrich with real-time analysis so churnRisk/healthScore are accurate
+    if (clients.length > 0 && typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            try {
+                const analysis = AdvancedChurnCalculator.analyze(c);
+                return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+            } catch (e) { return c; }
+        });
+    }
 
     const totalClients = clients.length;
-    const atRiskClients = clients.filter(c => c.churnRisk >= 60).length;
+    const atRiskClients = clients.filter(c => c.churnRisk >= 40).length;
     const healthyClients = clients.filter(c => c.healthScore >= 70).length;
     const avgHealthScore = totalClients > 0
         ? Math.round(clients.reduce((sum, c) => sum + (c.healthScore || 0), 0) / totalClients)
@@ -75,16 +85,9 @@ function getClientStats() {
     const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : CLIENTS;
 
     return {
-        atRisk: clients.filter(c => c.churnRisk >= 60).length,
+        atRisk: clients.filter(c => c.churnRisk >= 40).length,
         healthy: clients.filter(c => c.healthScore >= 70).length,
-        needsAttention: clients.filter(c => c.healthScore >= 40 && c.healthScore < 70).length,
-        noRecentVisit: clients.filter(c => {
-            if (!c.lastVisit) return true;
-            const lastVisit = new Date(c.lastVisit);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            return lastVisit < thirtyDaysAgo;
-        }).length
+        needsAttention: clients.filter(c => c.healthScore >= 40 && c.healthScore < 70).length
     };
 }
 
@@ -106,7 +109,7 @@ function getAIInsights() {
     }
 
     const insights = [];
-    const atRiskCount = clients.filter(c => c.churnRisk >= 60).length;
+    const atRiskCount = clients.filter(c => c.churnRisk >= 40).length;
 
     if (atRiskCount > 0) {
         insights.push({

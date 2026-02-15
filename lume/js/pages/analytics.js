@@ -6,8 +6,16 @@ function renderAnalyticsPage() {
     const user = AuthService ? AuthService.getCurrentUser() :
         JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
-    // Get dynamic data from clients
-    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    // Get dynamic data from clients and enrich with real-time analysis
+    let clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    if (clients.length > 0 && typeof AdvancedChurnCalculator !== 'undefined') {
+        clients = clients.map(c => {
+            try {
+                const analysis = AdvancedChurnCalculator.analyze(c);
+                return { ...c, healthScore: analysis.healthScore, churnRisk: analysis.churnRisk };
+            } catch (e) { return c; }
+        });
+    }
     const hasData = clients.length > 0;
 
     return `
@@ -133,14 +141,14 @@ function renderAnalyticsContent(clients) {
             </div>
             
             <div class="analytics-cards-row">
-                <div class="analytics-card">
+                <div class="analytics-card glass-card">
                     <h3>Health Distribution</h3>
                     <div class="health-distribution">
                         ${renderHealthDistribution(stats)}
                     </div>
                 </div>
                 
-                <div class="analytics-card">
+                <div class="analytics-card glass-card">
                     <h3>Churn Risk Analysis</h3>
                     <div class="churn-analysis">
                         ${renderChurnAnalysis(stats)}
@@ -167,24 +175,24 @@ function renderAnalyticsContent(clients) {
             </div>
             
             <div class="analytics-cards-row three-col">
-                <div class="analytics-card">
+                <div class="analytics-card glass-card">
                     <h3>Membership Breakdown</h3>
                     <div class="membership-breakdown">
                         ${renderMembershipBreakdown(stats)}
                     </div>
                 </div>
                 
-                <div class="analytics-card">
+                <div class="analytics-card glass-card">
                     <h3>Visit Frequency</h3>
                     <div class="visit-frequency">
                         ${renderVisitFrequency(stats)}
                     </div>
                 </div>
                 
-                <div class="analytics-card">
+                <div class="analytics-card glass-card">
                     <h3>Expiring Soon</h3>
                     <div class="expiring-clients">
-                        ${renderExpiringClients(stats)}
+                        ${renderExpiringClients(stats, clients)}
                     </div>
                 </div>
             </div>
@@ -194,7 +202,7 @@ function renderAnalyticsContent(clients) {
 
 function calculateAnalyticsStats(clients) {
     const totalClients = clients.length;
-    const atRisk = clients.filter(c => c.churnRisk >= 60).length;
+    const atRisk = clients.filter(c => c.churnRisk >= 40).length;
     const healthy = clients.filter(c => c.healthScore >= 70).length;
     const moderate = clients.filter(c => c.healthScore >= 40 && c.healthScore < 70).length;
     const poor = clients.filter(c => c.healthScore < 40).length;
@@ -205,18 +213,20 @@ function calculateAnalyticsStats(clients) {
 
     const totalRevenue = clients.reduce((sum, c) => sum + (c.totalSpend || 0), 0);
 
-    // Membership counts
-    const vip = clients.filter(c => c.membershipType === 'vip').length;
-    const premium = clients.filter(c => c.membershipType === 'premium').length;
-    const basic = clients.filter(c => c.membershipType === 'basic').length;
-    const none = clients.filter(c => !c.membershipType || c.membershipType === 'none').length;
+    // Membership counts - dynamic grouping by actual membership type
+    const membershipCounts = {};
+    clients.forEach(c => {
+        const type = c.membershipType || c.packageName || 'None';
+        membershipCounts[type] = (membershipCounts[type] || 0) + 1;
+    });
 
     // Expiring soon (within 14 days)
-    const expiringSoon = clients.filter(c => {
+    const expiringClients = clients.filter(c => {
         if (!c.expireDate) return false;
         const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
         return days <= 14 && days > 0;
-    }).length;
+    }).sort((a, b) => new Date(a.expireDate) - new Date(b.expireDate));
+    const expiringSoon = expiringClients.length;
 
     // Low sessions
     const lowSessions = clients.filter(c => c.remainingSessions !== undefined && c.remainingSessions <= 2).length;
@@ -233,8 +243,8 @@ function calculateAnalyticsStats(clients) {
         poorPercent: totalClients > 0 ? Math.round((poor / totalClients) * 100) : 0,
         avgHealth,
         totalRevenue,
-        vip, premium, basic, none,
-        expiringSoon,
+        membershipCounts,
+        expiringClients,
         lowSessions
     };
 }
@@ -243,7 +253,7 @@ function createAnalyticsMetric(label, value, subtitle, icon, color) {
     const iconSvg = getMetricIcon(icon);
 
     return `
-        <div class="analytics-metric ${color}">
+        <div class="analytics-metric glass-card ${color}">
             <div class="analytics-metric-icon">
                 ${iconSvg}
             </div>
@@ -337,17 +347,24 @@ function renderChurnAnalysis(stats) {
 
 function renderMembershipBreakdown(stats) {
     const total = stats.totalClients || 1;
-    const items = [
-        { label: 'VIP', count: stats.vip, color: 'purple', percent: Math.round((stats.vip / total) * 100) },
-        { label: 'Premium', count: stats.premium, color: 'blue', percent: Math.round((stats.premium / total) * 100) },
-        { label: 'Basic', count: stats.basic, color: 'cyan', percent: Math.round((stats.basic / total) * 100) },
-        { label: 'None', count: stats.none, color: 'gray', percent: Math.round((stats.none / total) * 100) }
-    ];
+    const colors = ['purple', 'blue', 'cyan', 'green', 'orange', 'pink', 'yellow', 'gray'];
+
+    // Sort by count descending
+    const entries = Object.entries(stats.membershipCounts || {})
+        .sort((a, b) => b[1] - a[1]);
+
+    const items = entries.map(([label, count], i) => ({
+        label: label.length > 30 ? label.substring(0, 28) + '…' : label,
+        fullLabel: label,
+        count,
+        color: colors[i % colors.length],
+        percent: Math.round((count / total) * 100)
+    }));
 
     return `
         <div class="membership-list">
             ${items.map(item => `
-                <div class="membership-row">
+                <div class="membership-row" title="${item.fullLabel}">
                     <span class="membership-dot ${item.color}"></span>
                     <span class="membership-label">${item.label}</span>
                     <span class="membership-count">${item.count}</span>
@@ -371,8 +388,10 @@ function renderVisitFrequency(stats) {
     `;
 }
 
-function renderExpiringClients(stats) {
-    if (stats.expiringSoon === 0) {
+function renderExpiringClients(stats, clients) {
+    const expiring = stats.expiringClients || [];
+
+    if (expiring.length === 0) {
         return `
             <div class="expiring-empty">
                 <span class="check-icon">✓</span>
@@ -382,13 +401,21 @@ function renderExpiringClients(stats) {
     }
 
     return `
-        <div class="expiring-alert">
-            <div class="expiring-count">
-                <span class="count-num">${stats.expiringSoon}</span>
-                <span class="count-label">Expiring Soon</span>
-            </div>
-            <p class="expiring-note">Within the next 14 days</p>
-            <button class="btn btn-sm btn-secondary" onclick="navigateTo('/clients')">View Clients</button>
+        <div class="expiring-list">
+            ${expiring.slice(0, 8).map(c => {
+        const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        const urgency = days <= 3 ? 'critical' : days <= 7 ? 'warning' : 'low';
+        return `
+                    <div class="expiring-client-row ${urgency}" onclick="navigateTo('/clients/${c.id}')" style="cursor:pointer;">
+                        <div class="expiring-client-info">
+                            <span class="expiring-client-name">${c.firstName} ${c.lastName}</span>
+                            <span class="expiring-client-pkg">${c.packageName || c.membershipType || ''}</span>
+                        </div>
+                        <span class="expiring-days ${urgency}">${days}d</span>
+                    </div>
+                `;
+    }).join('')}
+            ${expiring.length > 8 ? `<p class="expiring-more">+${expiring.length - 8} more</p>` : ''}
         </div>
     `;
 }
@@ -502,7 +529,7 @@ function getAllNotifications(stats, clients) {
 
 function renderNotificationItem(item) {
     return `
-        <div class="insight-card ${item.type}">
+        <div class="insight-card glass-card ${item.type}">
             <span class="insight-icon">${item.icon}</span>
             <div class="insight-content">
                 <div class="insight-header">
@@ -566,10 +593,70 @@ function updateAnalyticsTimeframe(timeframe) {
 }
 
 function exportAnalyticsReport() {
-    showToast('📊 Generating analytics report...', 'info');
-    setTimeout(() => {
-        showToast('✅ Report ready for download!', 'success');
-    }, 1500);
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+
+    if (clients.length === 0) {
+        showToast('No data to export', 'warning');
+        return;
+    }
+
+    // Enrich and prepare data
+    const exportData = clients.map(c => {
+        let health = c.healthScore;
+        let risk = c.churnRisk;
+
+        if (typeof AdvancedChurnCalculator !== 'undefined') {
+            const analysis = AdvancedChurnCalculator.analyze(c);
+            health = analysis.healthScore;
+            risk = analysis.churnRisk;
+        }
+
+        const daysSinceVisit = c.lastVisit
+            ? Math.floor((new Date() - new Date(c.lastVisit)) / (1000 * 60 * 60 * 24))
+            : '-';
+
+        return {
+            ...c,
+            healthScore: health,
+            churnRisk: risk,
+            daysSinceVisit
+        };
+    });
+
+    // CSV Headers
+    const headers = ['Client Name', 'Email', 'Membership', 'Join Date', 'Last Visit', 'Days Since Visit', 'Health Score', 'Churn Risk', 'Total Spent'];
+
+    // CSV Rows
+    const rows = exportData.map(c => [
+        `"${getClientFullName(c)}"`,
+        c.email || '',
+        c.packageName || c.membershipType || 'None',
+        c.joinDate ? new Date(c.joinDate).toLocaleDateString() : '-',
+        c.lastVisit ? new Date(c.lastVisit).toLocaleDateString() : 'Never',
+        c.daysSinceVisit,
+        c.healthScore || 0,
+        `${c.churnRisk || 0}%`,
+        `$${c.totalSpent || 0}`
+    ]);
+
+    // Build CSV Content
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    // Trigger Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lume_analytics_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('✅ Analytics report exported', 'success');
 }
 
 

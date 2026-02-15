@@ -243,6 +243,7 @@ app.post('/api/auth/login', async (req, res) => {
                 email: user.email,
                 name: user.name,
                 businessName: user.business_name || '',
+                settings: user.settings || {},
                 verified: true
             }
         });
@@ -265,6 +266,7 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
             email: user.email,
             name: user.name,
             businessName: user.business_name || '',
+            settings: user.settings || {},
             verified: !!user.verified,
             createdAt: user.created_at
         }
@@ -274,9 +276,9 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 // Update profile (protected route)
 app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     try {
-        const { name, businessName } = req.body;
+        const { name, businessName, settings } = req.body;
 
-        userOps.updateProfile(req.user.id, { name, businessName });
+        userOps.updateProfile(req.user.id, { name, businessName, settings });
 
         const user = userOps.findById(req.user.id);
 
@@ -286,7 +288,8 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                businessName: user.business_name || ''
+                businessName: user.business_name || '',
+                settings: user.settings || {}
             }
         });
     } catch (err) {

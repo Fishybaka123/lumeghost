@@ -39,7 +39,7 @@ function createMetricCard(config) {
            </div>`;
 
     return `
-        <div class="metric-card">
+        <div class="metric-card glass-card">
             <div class="metric-icon ${color}">
                 ${icon}
             </div>

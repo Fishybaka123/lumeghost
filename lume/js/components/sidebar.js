@@ -4,7 +4,7 @@
 
 function createSidebar(activePage = 'dashboard') {
     return `
-        <aside class="sidebar">
+        <aside class="sidebar glass-panel">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

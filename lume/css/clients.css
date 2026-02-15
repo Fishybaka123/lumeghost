@@ -42,7 +42,6 @@
     font-weight: 500;
     border-radius: var(--radius-full);
     border: 1px solid var(--gray-200);
-    background: white;
     color: var(--gray-600);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -61,7 +60,6 @@
 
 /* Clients Table */
 .clients-table-container {
-    background: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -127,7 +125,6 @@
 }
 
 .client-profile-header {
-    background: white;
     border-bottom: 1px solid var(--gray-200);
     padding: var(--spacing-6);
 }
@@ -197,26 +194,41 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--spacing-4);
+    gap: var(--spacing-4);
     padding: var(--spacing-6);
-    background: white;
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-700);
 }
 
 .profile-stat {
     text-align: center;
     padding: var(--spacing-3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.health-gauge {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--spacing-2);
+}
+
+.health-gauge-svg {
+    width: 100%;
+    height: 100%;
 }
 
 .profile-stat-value {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    color: var(--gray-900);
+    color: var(--gray-100);
     margin-bottom: var(--spacing-1);
 }
 
 .profile-stat-label {
     font-size: var(--font-size-sm);
-    color: var(--gray-500);
+    color: var(--gray-400);
 }
 
 .profile-stat.highlight .profile-stat-value {
@@ -247,7 +259,6 @@
 
 /* Profile Sections */
 .profile-section {
-    background: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -596,7 +607,7 @@
 
 .gauge-bg {
     fill: none;
-    stroke: var(--gray-200);
+    stroke: var(--gray-700);
     stroke-width: 3;
 }
 
@@ -620,7 +631,7 @@
 }
 
 .gauge-text {
-    fill: var(--gray-800);
+    fill: var(--gray-100);
     font-size: 10px;
     font-weight: 700;
     text-anchor: middle;

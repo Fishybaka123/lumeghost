@@ -100,7 +100,7 @@ const GlobalSearch = {
             
             .search-overlay.active {
                 display: flex;
-                animation: fadeIn 0.15s ease-out;
+                animation: fadeIn 0.1s ease-out;
             }
             
             @keyframes fadeIn {
@@ -314,6 +314,11 @@ const GlobalSearch = {
                 background: var(--nav-accent, #4F7DF3);
                 color: white;
             }
+
+            /* Hide filters as per user request */
+            .search-filters {
+                display: none !important;
+            }
         `;
         document.head.appendChild(styles);
     },
@@ -350,11 +355,6 @@ const GlobalSearch = {
                 </div>
                 <div class="search-results" id="search-results"></div>
                 <div class="search-footer">
-                    <div class="search-footer-hints">
-                        <span class="search-footer-hint"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
-                        <span class="search-footer-hint"><kbd>↵</kbd> Select</span>
-                        <span class="search-footer-hint"><kbd>esc</kbd> Close</span>
-                    </div>
                     <span>Lume MedSpa AI</span>
                 </div>
             </div>
@@ -421,7 +421,7 @@ const GlobalSearch = {
             input.value = '';
             input.focus();
 
-            // Show recent searches or defaults
+            // Show suggestions immediately on open
             this.showDefaultResults();
         }
     },
@@ -525,27 +525,53 @@ const GlobalSearch = {
     search(query) {
         const q = query.toLowerCase();
         this.results = [];
+        this.query = query; // Ensure internal query is updated
         const filter = this.currentFilter || 'all';
+
+        let allMatches = [];
 
         // Search clients
         if (filter === 'all' || filter === 'clients') {
             const clients = this.searchClients(q);
-            this.results.push(...clients);
+            allMatches.push(...clients);
         }
 
         // Search pages
         if (filter === 'all' || filter === 'pages') {
             const pages = this.searchPages(q);
-            this.results.push(...pages);
+            allMatches.push(...pages);
         }
 
         // Search actions
         if (filter === 'all' || filter === 'actions') {
             const actions = this.searchActions(q);
-            this.results.push(...actions);
+            allMatches.push(...actions);
         }
 
-        // Limit results
+        // Sort by relevance (prefix match is higher than contains)
+        allMatches.sort((a, b) => {
+            const aName = a.name.toLowerCase();
+            const bName = b.name.toLowerCase();
+            const aPrefix = aName.startsWith(q);
+            const bPrefix = bName.startsWith(q);
+
+            if (aPrefix && !bPrefix) return -1;
+            if (!aPrefix && bPrefix) return 1;
+
+            // If both prefixes or both not, sort by length (shorter is more likely to be the direct match)
+            return aName.length - bName.length;
+        });
+
+        // Pick top 3-5 as suggestions if we have a query
+        if (q.length > 0) {
+            const topResults = allMatches.slice(0, 3).map(r => ({ ...r, isSuggestion: true }));
+            const remaining = allMatches.slice(3);
+            this.results = [...topResults, ...remaining];
+        } else {
+            this.results = allMatches;
+        }
+
+        // Limit total results
         this.results = this.results.slice(0, 15);
 
         this.renderResults();
@@ -605,45 +631,60 @@ const GlobalSearch = {
     showDefaultResults() {
         this.results = [];
 
-        // Recent searches
+        // 1. Show Recent Searches if any
         if (this.recentSearches.length > 0) {
             this.recentSearches.forEach(r => {
                 this.results.push({
                     ...r,
                     subtitle: 'Recent',
-                    path: r.type === 'page' ? this.PAGES.find(p => p.id === r.id.replace('page-', ''))?.path : null,
+                    // Re-link actions/paths
+                    path: r.type === 'page' ? this.PAGES.find(p => p.id === r.id.replace('page-', ''))?.path : (r.path || null),
                     action: r.type === 'action' ? this.QUICK_ACTIONS.find(a => a.id === r.id.replace('action-', ''))?.action : null
                 });
             });
         }
 
-        // Popular pages
-        this.PAGES.slice(0, 4).forEach(p => {
-            if (!this.results.find(r => r.id === `page-${p.id}`)) {
-                this.results.push({
-                    id: `page-${p.id}`,
-                    type: 'page',
-                    name: p.name,
-                    subtitle: 'Page',
-                    icon: p.icon,
-                    path: p.path
-                });
-            }
-        });
+        // 2. Map some high-value Actions as suggestions if not many recents
+        if (this.results.length < 5) {
+            const suggestions = [
+                this.QUICK_ACTIONS.find(a => a.id === 'add-client'),
+                this.QUICK_ACTIONS.find(a => a.id === 'notifications'),
+                this.PAGES.find(p => p.id === 'analytics')
+            ].filter(Boolean);
 
-        // Popular actions
-        this.QUICK_ACTIONS.slice(0, 3).forEach(a => {
-            if (!this.results.find(r => r.id === `action-${a.id}`)) {
-                this.results.push({
-                    id: `action-${a.id}`,
-                    type: 'action',
-                    name: a.name,
-                    subtitle: 'Quick Action',
-                    icon: a.icon,
-                    action: a.action
-                });
-            }
-        });
+            suggestions.forEach(s => {
+                const id = s.path ? `page-${s.id}` : `action-${s.id}`;
+                if (!this.results.find(r => r.id === id)) {
+                    this.results.push({
+                        id,
+                        type: s.path ? 'page' : 'action',
+                        name: s.name,
+                        subtitle: 'Suggested',
+                        icon: s.icon,
+                        path: s.path,
+                        action: s.action
+                    });
+                }
+            });
+        }
+
+        // 3. Add top 3 clients as "Suggested" if space remains
+        if (this.results.length < 8 && ClientDataService) {
+            const clients = ClientDataService.getAll().slice(0, 3);
+            clients.forEach(c => {
+                if (!this.results.find(r => r.id === `client-${c.id}`)) {
+                    this.results.push({
+                        id: `client-${c.id}`,
+                        type: 'client',
+                        name: c.name,
+                        subtitle: 'Suggested Client',
+                        icon: '👤',
+                        path: `/clients/${c.id}`,
+                        data: c
+                    });
+                }
+            });
+        }
 
         this.renderResults();
     },
@@ -657,16 +698,22 @@ const GlobalSearch = {
         if (!container) return;
 
         if (this.results.length === 0) {
-            container.innerHTML = '';
+            container.innerHTML = this.query ? '' : ''; // Keep it clean if no matches
             return;
         }
 
-        // Group results by type
-        const grouped = {};
+        // Group results: Suggestions first, then by type
+        const suggestions = [];
+        const others = {};
+
         this.results.forEach((result, index) => {
-            const type = result.type;
-            if (!grouped[type]) grouped[type] = [];
-            grouped[type].push({ ...result, index });
+            if (result.isSuggestion) {
+                suggestions.push({ ...result, index });
+            } else {
+                const type = result.type;
+                if (!others[type]) others[type] = [];
+                others[type].push({ ...result, index });
+            }
         });
 
         let html = '';
@@ -677,7 +724,18 @@ const GlobalSearch = {
             recent: 'Recent'
         };
 
-        for (const [type, items] of Object.entries(grouped)) {
+        // Render Suggestions section
+        if (suggestions.length > 0) {
+            html += `
+                <div class="search-section">
+                    <div class="search-section-header">Suggestions</div>
+                    ${suggestions.map(item => this.renderResultItem(item)).join('')}
+                </div>
+            `;
+        }
+
+        // Render other sections
+        for (const [type, items] of Object.entries(others)) {
             html += `
                 <div class="search-section">
                     <div class="search-section-header">${typeLabels[type] || type}</div>

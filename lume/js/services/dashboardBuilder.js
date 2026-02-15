@@ -80,29 +80,82 @@ const DashboardBuilder = {
     // Data sources
     DATA_SOURCES: {
         clients_total: { name: 'Total Clients', fetch: () => ClientDataService?.getAll()?.length || 0 },
-        clients_atrisk: { name: 'At-Risk Clients', fetch: () => (ClientDataService?.getAll() || []).filter(c => c.churnRisk >= 50).length },
-        avg_health: {
-            name: 'Avg Health Score', fetch: () => {
+        clients_atrisk: {
+            name: 'At-Risk Clients',
+            fetch: () => {
                 const clients = ClientDataService?.getAll() || [];
-                return clients.length ? Math.round(clients.reduce((s, c) => s + (c.healthScore || 0), 0) / clients.length) : 0;
+                if (typeof AdvancedChurnCalculator !== 'undefined') {
+                    return clients.filter(c => {
+                        const analysis = AdvancedChurnCalculator.analyze(c);
+                        return analysis.churnRisk >= 50;
+                    }).length;
+                }
+                return clients.filter(c => (c.churnRisk || 0) >= 50).length;
+            }
+        },
+        avg_health: {
+            name: 'Avg Health Score',
+            fetch: () => {
+                const clients = ClientDataService?.getAll() || [];
+                if (!clients.length) return 0;
+
+                let totalHealth = 0;
+
+                if (typeof AdvancedChurnCalculator !== 'undefined') {
+                    totalHealth = clients.reduce((sum, c) => {
+                        const analysis = AdvancedChurnCalculator.analyze(c);
+                        return sum + (analysis.healthScore || 0);
+                    }, 0);
+                } else {
+                    totalHealth = clients.reduce((sum, c) => sum + (c.healthScore || 0), 0);
+                }
+
+                return Math.round(totalHealth / clients.length);
             }
         },
         total_revenue: { name: 'Total Revenue', fetch: () => (ClientDataService?.getAll() || []).reduce((s, c) => s + (c.totalSpent || 0), 0) },
         avg_churn: {
-            name: 'Avg Churn Risk', fetch: () => {
+            name: 'Avg Churn Risk',
+            fetch: () => {
                 const clients = ClientDataService?.getAll() || [];
-                return clients.length ? Math.round(clients.reduce((s, c) => s + (c.churnRisk || 0), 0) / clients.length) : 0;
+                if (!clients.length) return 0;
+
+                let totalChurn = 0;
+
+                if (typeof AdvancedChurnCalculator !== 'undefined') {
+                    totalChurn = clients.reduce((sum, c) => {
+                        const analysis = AdvancedChurnCalculator.analyze(c);
+                        return sum + (analysis.churnRisk || 0);
+                    }, 0);
+                } else {
+                    totalChurn = clients.reduce((sum, c) => sum + (c.churnRisk || 0), 0);
+                }
+
+                return Math.round(totalChurn / clients.length);
             }
         },
         recent_clients: { name: 'Recent Clients', fetch: () => (ClientDataService?.getAll() || []).slice(0, 5) },
         health_distribution: {
-            name: 'Health Distribution', fetch: () => {
+            name: 'Health Distribution',
+            fetch: () => {
                 const clients = ClientDataService?.getAll() || [];
+                let healthy = 0, needsAttention = 0, atRisk = 0;
+
+                clients.forEach(c => {
+                    let score = c.healthScore || 0;
+                    if (typeof AdvancedChurnCalculator !== 'undefined') {
+                        score = AdvancedChurnCalculator.analyze(c).healthScore;
+                    }
+
+                    if (score >= 75) healthy++;
+                    else if (score >= 50) needsAttention++;
+                    else atRisk++;
+                });
+
                 return [
-                    { label: 'Excellent (80+)', value: clients.filter(c => c.healthScore >= 80).length },
-                    { label: 'Good (60-79)', value: clients.filter(c => c.healthScore >= 60 && c.healthScore < 80).length },
-                    { label: 'Fair (40-59)', value: clients.filter(c => c.healthScore >= 40 && c.healthScore < 60).length },
-                    { label: 'Poor (<40)', value: clients.filter(c => c.healthScore < 40).length }
+                    { label: 'Healthy (75-100)', value: healthy },
+                    { label: 'Needs Attention (50-74)', value: needsAttention },
+                    { label: 'At Risk (<50)', value: atRisk }
                 ];
             }
         },
