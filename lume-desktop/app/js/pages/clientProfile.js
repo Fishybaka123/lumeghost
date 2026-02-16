@@ -1,25 +1,70 @@
 // ===========================================
-// CLIENT PROFILE PAGE
+// CLIENT PROFILE PAGE - FULLY FUNCTIONAL
 // ===========================================
 
 function renderClientProfilePage(clientId) {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
-    const client = getClientById(clientId);
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
 
     if (!client) {
         return renderNotFoundPage('Client not found');
     }
 
-    const healthClass = getHealthScoreClass(client.healthScore);
-    const churnClass = getChurnRiskClass(client.churnRisk);
+    // Get advanced AI analysis with ML predictions
+    const analysis = AdvancedChurnCalculator ?
+        AdvancedChurnCalculator.analyze(client) :
+        (ChurnAnalyzer ? ChurnAnalyzer.analyze(client) : { healthScore: client.healthScore, churnRisk: client.churnRisk, riskFactors: [] });
+
+    const healthClass = getHealthScoreClass(analysis.healthScore);
+    const churnClass = getChurnRiskClass(analysis.churnRisk);
+
+    // Check for pending actions from Dashboard
+    setTimeout(() => {
+        const pendingActionStr = sessionStorage.getItem('lume_pending_action');
+        if (pendingActionStr) {
+            try {
+                const pendingAction = JSON.parse(pendingActionStr);
+                // Only trigger if it matches current client and is recent (last 10s)
+                if (pendingAction.clientId == clientId && (Date.now() - pendingAction.timestamp < 10000)) {
+                    sessionStorage.removeItem('lume_pending_action');
+
+                    if (pendingAction.type === 'send-nudge') {
+                        // Small delay to ensure modal logic is ready
+                        setTimeout(() => sendNudge(clientId), 300);
+                    } else if (pendingAction.type === 'schedule') {
+                        setTimeout(() => scheduleAppointment(clientId), 300);
+                    }
+                }
+            } catch (e) {
+                console.error('Error handling pending action:', e);
+            }
+        }
+    }, 100);
+
+    // Calculate expiry info
+    let expiryInfo = 'No expiration';
+    let expiryClass = '';
+    if (client.expireDate) {
+        const days = Math.ceil((new Date(client.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        if (days < 0) {
+            expiryInfo = `Expired ${Math.abs(days)} days ago`;
+            expiryClass = 'danger';
+        } else if (days <= 7) {
+            expiryInfo = `Expires in ${days} days`;
+            expiryClass = 'danger';
+        } else if (days <= 14) {
+            expiryInfo = `Expires in ${days} days`;
+            expiryClass = 'warning';
+        } else {
+            expiryInfo = formatDate(client.expireDate);
+        }
+    }
 
     return `
-        <div class="app-layout client-profile-page">
-            ${createSidebar('clients')}
+        <div class="app-layout-topnav client-profile-page">
+            ${createTopNav('clients')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <button class="back-button" onclick="navigateTo('/clients')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -42,13 +87,13 @@ function renderClientProfilePage(clientId) {
                                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                                             <polyline points="22,6 12,13 2,6"/>
                                         </svg>
-                                        ${client.email}
+                                        ${client.email || 'No email'}
                                     </span>
                                     <span class="profile-meta-item">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                                         </svg>
-                                        ${client.phone}
+                                        ${client.phone || 'No phone'}
                                     </span>
                                     <span class="profile-meta-item">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -57,7 +102,7 @@ function renderClientProfilePage(clientId) {
                                             <line x1="8" y1="2" x2="8" y2="6"/>
                                             <line x1="3" y1="10" x2="21" y2="10"/>
                                         </svg>
-                                        Member since ${formatDate(client.memberSince)}
+                                        ${client.packageName || 'No package'}
                                     </span>
                                 </div>
                                 <div class="profile-tags">
@@ -68,8 +113,9 @@ function renderClientProfilePage(clientId) {
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
                                         </svg>
-                                        ${client.churnRisk}% Churn Risk
+                                        ${analysis.churnRisk}% Churn Risk
                                     </span>
+                                    ${analysis.urgency === 'critical' ? '<span class="urgency-badge critical">⚠️ Critical</span>' : ''}
                                 </div>
                             </div>
                             <div class="profile-actions">
@@ -91,27 +137,39 @@ function renderClientProfilePage(clientId) {
                             </div>
                         </div>
                         
-                        <!-- Stats Row -->
+                        <!-- Stats Row - Enhanced with Advanced Metrics -->
                         <div class="profile-stats">
-                            <div class="profile-stat highlight">
-                                <div class="profile-stat-value">${client.healthScore}</div>
+                            <!-- Health Score with Gauge -->
+                            <div class="profile-stat highlight" title="Sub-metrics: Engagement ${analysis.healthMetrics?.engagement || analysis.healthScore}, Loyalty ${analysis.healthMetrics?.loyalty || analysis.healthScore}, Satisfaction ${analysis.healthMetrics?.satisfaction || analysis.healthScore}">
+                                <div class="health-gauge">
+                                    <svg viewBox="0 0 36 36" class="health-gauge-svg">
+                                        <path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <path class="gauge-fill ${healthClass}" stroke-dasharray="${analysis.healthScore}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <text x="18" y="21" class="gauge-text">${analysis.healthScore}</text>
+                                    </svg>
+                                </div>
                                 <div class="profile-stat-label">Health Score</div>
                             </div>
-                            <div class="profile-stat ${client.churnRisk >= 60 ? 'danger' : ''}">
-                                <div class="profile-stat-value">${client.churnRisk}%</div>
+                            <!-- Churn Risk with Alert -->
+                            <div class="profile-stat ${analysis.churnRisk >= 60 ? 'danger' : analysis.churnRisk >= 40 ? 'warning' : ''}">
+                                <div class="profile-stat-value">${analysis.churnRisk}%</div>
                                 <div class="profile-stat-label">Churn Risk</div>
+                                ${analysis.churnRisk >= 60 ? '<span class="stat-alert">⚠️</span>' : ''}
                             </div>
-                            <div class="profile-stat success">
-                                <div class="profile-stat-value">${formatCurrency(client.totalSpend)}</div>
-                                <div class="profile-stat-label">Total Spend</div>
+                            <!-- Sessions Left -->
+                            <div class="profile-stat ${client.remainingSessions <= 2 ? 'danger' : client.remainingSessions <= 5 ? 'warning' : 'success'}">
+                                <div class="profile-stat-value">${client.remainingSessions !== undefined ? client.remainingSessions : 'N/A'}</div>
+                                <div class="profile-stat-label">Sessions Left</div>
                             </div>
-                            <div class="profile-stat">
-                                <div class="profile-stat-value">${client.visitCount}</div>
-                                <div class="profile-stat-label">Total Visits</div>
+                            <!-- Predicted Churn Date -->
+                            <div class="profile-stat ${analysis.churnPrediction?.confidence === 'high' ? 'danger' : ''}" title="Confidence: ${analysis.churnPrediction?.confidence || 'medium'} (±${analysis.churnPrediction?.confidenceInterval?.high - analysis.churnPrediction?.daysUntilChurn || 10} days)">
+                                <div class="profile-stat-value">${analysis.churnPrediction?.daysUntilChurn || '--'} days</div>
+                                <div class="profile-stat-label">Est. Churn Date</div>
                             </div>
-                            <div class="profile-stat">
-                                <div class="profile-stat-value">${client.nextAppointment ? formatDate(client.nextAppointment) : 'None'}</div>
-                                <div class="profile-stat-label">Next Appointment</div>
+                            <!-- LTV Projection -->
+                            <div class="profile-stat" title="Current LTV: $${analysis.lifetime?.currentLTV || 0} | Projected: $${analysis.lifetime?.projectedLTV || 0}">
+                                <div class="profile-stat-value">$${analysis.lifetime?.churnAdjustedLTV || analysis.lifetime?.currentLTV || (client.visitCount || 0) * 285}</div>
+                                <div class="profile-stat-label">Lifetime Value</div>
                             </div>
                         </div>
                     </div>
@@ -131,12 +189,43 @@ function renderClientProfilePage(clientId) {
                                         </svg>
                                         AI Insights
                                     </h3>
-                                    <span class="badge badge-info">Placeholder</span>
+                                    <span class="badge badge-${analysis.urgency === 'critical' ? 'danger' : analysis.urgency === 'high' ? 'warning' : 'info'}">${analysis.urgency.toUpperCase()}</span>
                                 </div>
                                 <div class="profile-section-content">
-                                    ${generateAIInsights(client)}
+                                    ${generateAIInsights(client, analysis)}
                                 </div>
                             </div>
+                            
+                            <!-- Risk Factors -->
+                            ${analysis.riskFactors.length > 0 ? `
+                            <div class="profile-section" style="margin-bottom: var(--spacing-6);">
+                                <div class="profile-section-header">
+                                    <h3 class="profile-section-title">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                        Risk Factors
+                                    </h3>
+                                </div>
+                                <div class="profile-section-content">
+                                    <ul class="risk-factors-list">
+                                        ${analysis.riskFactors.map(factor => `
+                                            <li class="risk-factor-item">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                                </svg>
+                                                ${factor}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                    <div class="recommendation-box">
+                                        <strong>Recommended Action:</strong> ${analysis.recommendation}
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                             
                             <!-- Visit Timeline -->
                             <div class="profile-section">
@@ -152,7 +241,7 @@ function renderClientProfilePage(clientId) {
                                 </div>
                                 <div class="profile-section-content">
                                     <div class="visit-timeline">
-                                        ${client.visits.map((visit, index) => `
+                                        ${(client.visits && client.visits.length > 0) ? client.visits.map((visit, index) => `
                                             <div class="timeline-item ${visit.status}">
                                                 <div class="timeline-dot"></div>
                                                 <div class="timeline-date">${formatDate(visit.date)}</div>
@@ -161,7 +250,11 @@ function renderClientProfilePage(clientId) {
                                                     ${visit.amount > 0 ? `<div class="timeline-amount">${formatCurrency(visit.amount)}</div>` : ''}
                                                 </div>
                                             </div>
-                                        `).join('')}
+                                        `).join('') : `
+                                            <div class="empty-timeline">
+                                                <p>No visit history available</p>
+                                            </div>
+                                        `}
                                     </div>
                                 </div>
                             </div>
@@ -191,25 +284,25 @@ function renderClientProfilePage(clientId) {
                                             </svg>
                                             Schedule Appointment
                                         </button>
-                                        <button class="quick-action-btn">
+                                        <button class="quick-action-btn" onclick="callClient(${client.id})">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
                                             </svg>
                                             Call Client
                                         </button>
-                                        <button class="quick-action-btn">
+                                        <button class="quick-action-btn" onclick="emailClient(${client.id})">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                <polyline points="14 2 14 8 20 8"/>
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                                <polyline points="22,6 12,13 2,6"/>
                                             </svg>
-                                            View Documents
+                                            Send Email
                                         </button>
-                                        <button class="quick-action-btn">
+                                        <button class="quick-action-btn" onclick="upgradeToVIP(${client.id})">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <circle cx="12" cy="8" r="7"/>
                                                 <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
                                             </svg>
-                                            Add to VIP Program
+                                            ${client.membershipType === 'vip' ? 'VIP Member ✓' : 'Upgrade to VIP'}
                                         </button>
                                     </div>
                                 </div>
@@ -236,61 +329,104 @@ function renderClientProfilePage(clientId) {
                 </div>
             </main>
         </div>
+        
+        <!-- Nudge Modal -->
+        <div id="nudge-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeNudgeModal()"></div>
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>📨 Personalized Nudge</h3>
+                    <button class="modal-close" onclick="closeNudgeModal()">×</button>
+                </div>
+                <div class="modal-body" id="nudge-modal-body">
+                    <!-- Content will be set dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schedule Modal -->
+        <div id="schedule-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeScheduleModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📅 Schedule Appointment</h3>
+                    <button class="modal-close" onclick="closeScheduleModal()">×</button>
+                </div>
+                <div class="modal-body" id="schedule-modal-body">
+                    <!-- Content will be set dynamically -->
+                </div>
+            </div>
+        </div>
     `;
 }
 
-function generateAIInsights(client) {
+function generateAIInsights(client, analysis) {
     const insights = [];
 
-    // Generate insights based on client data
-    if (client.churnRisk >= 60) {
+    // Generate insights based on current data
+    if (analysis.churnRisk >= 60) {
         insights.push({
             type: 'warning',
             title: 'High Churn Risk Detected',
-            message: `${client.firstName} hasn't visited in a while and shows signs of disengagement. Consider sending a personalized re-engagement offer.`,
-            action: 'Send Re-engagement Nudge'
+            message: `${client.firstName} shows ${analysis.churnRisk}% churn risk. ${analysis.recommendation}`,
+            action: 'Send Re-engagement Nudge',
+            actionFn: `sendNudge(${client.id})`
         });
     }
 
-    if (!client.nextAppointment) {
+    if (client.remainingSessions !== undefined && client.remainingSessions <= 2) {
         insights.push({
             type: 'action',
-            title: 'No Upcoming Appointment',
-            message: `${client.firstName} doesn't have any scheduled appointments. Based on their treatment history, they may be due for a follow-up.`,
-            action: 'Schedule Follow-up'
+            title: client.remainingSessions === 0 ? 'No Sessions Remaining' : 'Low Sessions Alert',
+            message: `${client.firstName} has only ${client.remainingSessions} session(s) left. Consider sending a renewal offer.`,
+            action: 'Send Renewal Nudge',
+            actionFn: `sendNudge(${client.id})`
         });
     }
 
-    if (client.preferredTreatments.length > 0 && client.visitCount > 5) {
-        insights.push({
-            type: 'opportunity',
-            title: 'Upsell Opportunity',
-            message: `Based on ${client.firstName}'s preference for ${client.preferredTreatments[0]}, they might be interested in complementary treatments.`,
-            action: 'View Recommendations'
-        });
+    if (client.expireDate) {
+        const days = Math.ceil((new Date(client.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        if (days < 0) {
+            insights.push({
+                type: 'warning',
+                title: 'Package Expired',
+                message: `${client.firstName}'s package expired ${Math.abs(days)} days ago. Reach out with a renewal offer.`,
+                action: 'Send Renewal Offer',
+                actionFn: `sendNudge(${client.id})`
+            });
+        } else if (days <= 14) {
+            insights.push({
+                type: 'action',
+                title: 'Package Expiring Soon',
+                message: `${client.firstName}'s ${client.packageName || 'package'} expires in ${days} days.`,
+                action: 'Schedule Sessions',
+                actionFn: `scheduleAppointment(${client.id})`
+            });
+        }
     }
 
-    if (client.membershipType === 'vip' || client.totalSpend > 5000) {
+    if (client.membershipType === 'vip' || (client.totalSpend && client.totalSpend > 5000)) {
         insights.push({
             type: 'success',
-            title: 'Loyal Customer',
-            message: `${client.firstName} is a high-value customer with ${formatCurrency(client.totalSpend)} lifetime spend. Consider exclusive perks to maintain loyalty.`,
+            title: 'High-Value Client',
+            message: `${client.firstName} is a ${client.membershipType === 'vip' ? 'VIP member' : 'high-value client'}. Prioritize their experience.`,
             action: null
         });
     }
 
-    // If no specific insights, show placeholder
+    // If no specific insights
     if (insights.length === 0) {
         insights.push({
             type: 'info',
-            title: 'AI Analysis Ready',
-            message: 'When connected to your data, AI will provide personalized insights and recommendations for this client.',
-            action: null
+            title: 'Client Status: Good',
+            message: `${client.firstName} appears to be in good standing. Continue regular engagement.`,
+            action: 'Send Check-in',
+            actionFn: `sendNudge(${client.id})`
         });
     }
 
     return insights.map(insight => `
-        <div class="ai-insight-card">
+        <div class="ai-insight-card ${insight.type}">
             <div class="ai-insight-header">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -302,19 +438,304 @@ function generateAIInsights(client) {
             <p class="ai-insight-text">${insight.message}</p>
             ${insight.action ? `
                 <div class="ai-insight-action">
-                    <button class="btn btn-sm btn-primary">${insight.action}</button>
+                    <button class="btn btn-sm btn-primary" onclick="${insight.actionFn}">${insight.action}</button>
                 </div>
             ` : ''}
         </div>
     `).join('');
 }
 
+// ============================================
+// FUNCTIONAL BUTTON HANDLERS
+// ============================================
+
+// Send Nudge - Opens modal with AI-generated message
+function sendNudge(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client) {
+        showToast('Client not found', 'error');
+        return;
+    }
+
+    // Generate personalized nudge
+    const nudge = NudgeGenerator.generate(client);
+
+    const modal = document.getElementById('nudge-modal');
+    const body = document.getElementById('nudge-modal-body');
+
+    if (!modal || !body) {
+        // If modal doesn't exist (called from clients list), show alert
+        alert(`📨 Nudge for ${client.firstName}:\n\n${nudge.message}`);
+        return;
+    }
+
+    body.innerHTML = `
+        <div class="nudge-preview">
+            <div class="nudge-header">
+                <div class="nudge-recipient">
+                    <strong>To:</strong> ${getClientFullName(client)} (${client.email || 'No email'})
+                </div>
+                <div class="nudge-type">
+                    <span class="badge badge-${nudge.urgency === 'critical' ? 'danger' : nudge.urgency === 'high' ? 'warning' : 'info'}">
+                        ${nudge.type.replace('-', ' ').toUpperCase()}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="nudge-subject">
+                <strong>Subject:</strong> ${nudge.subject}
+            </div>
+            
+            <div class="nudge-channels">
+                <strong>Recommended Channels:</strong>
+                ${nudge.channels.map(ch => `<span class="channel-badge">${ch.toUpperCase()}</span>`).join(' ')}
+            </div>
+            
+            <div class="nudge-message-container">
+                <label>Message:</label>
+                <textarea id="nudge-message-text" class="nudge-message-input" rows="12">${nudge.message}</textarea>
+            </div>
+            
+            <div class="nudge-actions">
+                <button class="btn btn-secondary" onclick="copyNudgeToClipboard()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    Copy to Clipboard
+                </button>
+                <button class="btn btn-secondary" onclick="regenerateNudge(${clientId})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    Regenerate
+                </button>
+                <button class="btn btn-primary" onclick="sendNudgeNow(${clientId})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
+                    </svg>
+                    Send Now
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function closeNudgeModal() {
+    const modal = document.getElementById('nudge-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function copyNudgeToClipboard() {
+    const textarea = document.getElementById('nudge-message-text');
+    if (textarea) {
+        NudgeGenerator.copyToClipboard(textarea.value);
+        showToast('✓ Copied to clipboard!', 'success');
+    }
+}
+
+function regenerateNudge(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client) return;
+
+    // Generate a different type of nudge
+    const types = ['renewal', 'low-sessions', 'expiring-soon', 're-engagement', 'check-in'];
+    const randomType = types[Math.floor(Math.random() * types.length)];
+    const nudge = NudgeGenerator.generate(client, randomType);
+
+    const textarea = document.getElementById('nudge-message-text');
+    if (textarea) {
+        textarea.value = nudge.message;
+    }
+
+    showToast('✓ New message generated', 'success');
+}
+
+function sendNudgeNow(clientId) {
+    const textarea = document.getElementById('nudge-message-text');
+    const message = textarea ? textarea.value : '';
+
+    // Get the nudge data for logging
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    const nudge = NudgeGenerator.generate(client);
+
+    // Log to communication service
+    if (CommunicationService) {
+        CommunicationService.logNudge(clientId, {
+            message: message,
+            subject: nudge.subject,
+            type: nudge.type,
+            channels: nudge.channels,
+            urgency: nudge.urgency
+        });
+    }
+
+    // In a real app, this would send via API
+    console.log('Sending nudge to client', clientId, ':', message);
+
+    closeNudgeModal();
+    showToast('✓ Nudge sent successfully!', 'success');
+}
+
+// Schedule Appointment
+function scheduleAppointment(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client) {
+        showToast('Client not found', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('schedule-modal');
+    const body = document.getElementById('schedule-modal-body');
+
+    if (!modal || !body) {
+        alert(`📅 Schedule appointment for ${getClientFullName(client)}\n\n(Calendar integration coming soon)`);
+        return;
+    }
+
+    // Get tomorrow's date as default
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const defaultDate = tomorrow.toISOString().split('T')[0];
+
+    body.innerHTML = `
+        <div class="schedule-form">
+            <div class="form-group">
+                <label>Client</label>
+                <input type="text" class="input" value="${getClientFullName(client)}" disabled>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" class="input" id="schedule-date" value="${defaultDate}" min="${defaultDate}">
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <select class="input" id="schedule-time">
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00" selected>2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                        <option value="17:00">5:00 PM</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Service</label>
+                <select class="input" id="schedule-service">
+                    <option value="">Select service...</option>
+                    <option value="consultation">Consultation</option>
+                    <option value="botox">Botox Treatment</option>
+                    <option value="filler">Dermal Fillers</option>
+                    <option value="facial">HydraFacial</option>
+                    <option value="laser">Laser Treatment</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea class="input" id="schedule-notes" rows="3" placeholder="Add any notes..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmSchedule(${clientId})">Schedule Appointment</button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function closeScheduleModal() {
+    const modal = document.getElementById('schedule-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmSchedule(clientId) {
+    const date = document.getElementById('schedule-date')?.value;
+    const time = document.getElementById('schedule-time')?.value;
+    const service = document.getElementById('schedule-service')?.value;
+
+    if (!date || !service) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+
+    // In a real app, this would save to a calendar system
+    console.log('Scheduling appointment:', { clientId, date, time, service });
+
+    // Update client's next appointment
+    if (ClientDataService) {
+        ClientDataService.update(clientId, { nextAppointment: date });
+    }
+
+    closeScheduleModal();
+    showToast('✓ Appointment scheduled!', 'success');
+}
+
+// Call Client
+function callClient(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client || !client.phone) {
+        showToast('No phone number available', 'error');
+        return;
+    }
+
+    // Open tel: link
+    window.location.href = `tel:${client.phone.replace(/\D/g, '')}`;
+}
+
+// Email Client
+function emailClient(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client || !client.email) {
+        showToast('No email available', 'error');
+        return;
+    }
+
+    // Pre-generate a subject line
+    const subject = encodeURIComponent(`Hello from Your Med Spa, ${client.firstName}!`);
+    window.location.href = `mailto:${client.email}?subject=${subject}`;
+}
+
+// Upgrade to VIP
+function upgradeToVIP(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
+    if (!client) {
+        showToast('Client not found', 'error');
+        return;
+    }
+
+    if (client.membershipType === 'vip') {
+        showToast('Already a VIP member!', 'info');
+        return;
+    }
+
+    if (confirm(`Upgrade ${getClientFullName(client)} to VIP membership?`)) {
+        // Update membership
+        if (ClientDataService) {
+            ClientDataService.update(clientId, { membershipType: 'vip' });
+        }
+
+        showToast('✓ Upgraded to VIP!', 'success');
+
+        // Refresh the page to show updated status
+        navigateTo(`/clients/${clientId}`);
+    }
+}
+
 function saveNotes(clientId) {
     const notesInput = document.querySelector('.notes-input');
-    if (notesInput) {
-        // In production, this would save to a database
-        console.log('Saving notes for client', clientId, ':', notesInput.value);
-        alert('✅ Notes saved successfully!');
+    if (notesInput && ClientDataService) {
+        ClientDataService.update(clientId, { notes: notesInput.value });
+        showToast('✓ Notes saved!', 'success');
     }
 }
 

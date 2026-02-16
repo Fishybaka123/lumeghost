@@ -78,6 +78,11 @@ function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
 
+    // Limit to 3 notifications
+    while (container.children.length >= 3) {
+        container.removeChild(container.firstChild);
+    }
+
     container.appendChild(toast);
 
     // Add styles if not present
@@ -149,40 +154,5 @@ function formatNumber(num) {
     return num.toString();
 }
 
-// Demo mode banner
-function showDemoModeBanner() {
-    if (!document.querySelector('.demo-banner')) {
-        const banner = document.createElement('div');
-        banner.className = 'demo-banner';
-        banner.style.cssText = `
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #0d7a8c 0%, #074954 100%);
-            color: white;
-            padding: 12px 20px;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        `;
-        banner.innerHTML = `
-            <span>🚀 You're viewing Lume in demo mode with sample data</span>
-            <button onclick="this.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer;">Dismiss</button>
-        `;
-        document.body.appendChild(banner);
-    }
-}
-
-// Show demo banner on dashboard load
-window.addEventListener('hashchange', function () {
-    if (window.location.hash === '#/dashboard') {
-        setTimeout(showDemoModeBanner, 1000);
-    }
-});
 
 console.log('✅ Lume app initialized');

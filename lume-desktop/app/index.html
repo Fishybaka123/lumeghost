@@ -32,29 +32,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/clients.css">
     <link rel="stylesheet" href="css/analytics.css">
     <link rel="stylesheet" href="css/communications.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/operations.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/top-nav.css">
+    <link rel="stylesheet" href="css/minimalistic.css">
 </head>
 
 <body>
     <div id="app"></div>
 
+    <!-- Services (load first) -->
+    <script src="js/services/clientUtils.js"></script>
+    <script src="js/services/csvParser.js"></script>
+    <script src="js/services/marketBenchmarks.js"></script>
+    <script src="js/services/advancedChurnCalculator.js"></script>
+    <script src="js/services/churnAnalyzer.js"></script>
+    <script src="js/services/nudgeGenerator.js"></script>
+    <script src="js/services/clientDataService.js"></script>
+    <script src="js/services/communicationService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/services/themeService.js"></script>
+    <script src="js/services/exportService.js"></script>
+    <script src="js/services/importService.js"></script>
+    <script src="js/services/mfaService.js"></script>
+    <script src="js/services/apiClient.js"></script>
+    <script src="js/services/dashboardBuilder.js"></script>
+    <script src="js/services/integrationsService.js"></script>
+
+    <!-- Data -->
     <script src="js/data/clients.js"></script>
     <script src="js/data/metrics.js"></script>
+
+    <!-- Components -->
     <script src="js/components/sidebar.js"></script>
+    <script src="js/components/topNav.js"></script>
     <script src="js/components/header.js"></script>
     <script src="js/components/metricCard.js"></script>
     <script src="js/components/clientTable.js"></script>
+    <script src="js/components/notificationCenter.js"></script>
+    <script src="js/components/globalSearch.js"></script>
     <script src="js/pages/login.js"></script>
     <script src="js/pages/dashboard.js"></script>
     <script src="js/pages/clients.js"></script>
     <script src="js/pages/clientProfile.js"></script>
     <script src="js/pages/analytics.js"></script>
     <script src="js/pages/communications.js"></script>
+    <script src="js/pages/settings.js"></script>
+    <script src="js/pages/operations.js"></script>
     <script src="js/router.js"></script>
     <script src="js/app.js"></script>
 

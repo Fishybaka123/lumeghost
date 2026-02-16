@@ -36,15 +36,6 @@ function createClientRow(client) {
                 </span>
             </td>
             <td>
-                <span class="text-sm">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline-block; vertical-align: middle; margin-right: 4px; color: var(--gray-400);">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    ${client.lastVisit ? getRelativeTime(client.lastVisit) : 'No visits yet'}
-                </span>
-            </td>
-            <td>
                 <span class="membership-badge ${getMembershipBadgeClass(client.membershipType)}">
                     ${getMembershipLabel(client.membershipType)}
                 </span>
@@ -134,10 +125,6 @@ function createClientTable(clients, options = {}) {
                             </th>
                             <th class="sortable" onclick="sortClients('churnRisk')">
                                 Churn Risk
-                                <span class="sort-icon">↕</span>
-                            </th>
-                            <th class="sortable" onclick="sortClients('lastVisit')">
-                                Last Visit
                                 <span class="sort-icon">↕</span>
                             </th>
                             <th>Membership</th>

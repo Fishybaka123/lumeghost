@@ -288,3 +288,133 @@
         padding: var(--spacing-6);
     }
 }
+
+/* ========================================
+   AUTH TABS & REGISTRATION FLOW
+   ======================================== */
+
+/* Auth Tab Toggle */
+.auth-tabs {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    margin-bottom: var(--spacing-5);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: var(--spacing-2) var(--spacing-4);
+    border: none;
+    background: none;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--gray-500);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+}
+
+.auth-tab:hover {
+    color: var(--gray-700);
+}
+
+.auth-tab.active {
+    background: white;
+    color: var(--gray-900);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Auth Switch Text */
+.auth-switch-text {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-top: var(--spacing-4);
+}
+
+.auth-switch-text a {
+    color: var(--primary-500);
+    font-weight: 500;
+}
+
+/* Verification Section */
+.verification-content {
+    text-align: center;
+    padding: var(--spacing-4) 0;
+}
+
+.verification-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-5);
+    background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-50) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-500);
+}
+
+.verification-content h3 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-2);
+    color: var(--gray-900);
+}
+
+/* 6-Digit Code Input */
+.verification-code-input {
+    display: flex;
+    gap: var(--spacing-2);
+    justify-content: center;
+    margin: var(--spacing-6) 0;
+}
+
+.verification-code-input input {
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.verification-code-input input:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.verification-code-input input:not(:placeholder-shown) {
+    border-color: var(--primary-400);
+}
+
+/* Verification Error */
+.verification-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--radius);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-4);
+}
+
+/* Resend Link */
+.resend-text {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-top: var(--spacing-4);
+}
+
+.resend-text a {
+    color: var(--primary-500);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Button in verification */
+.verification-content .btn {
+    width: 100%;
+}

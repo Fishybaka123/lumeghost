@@ -580,3 +580,65 @@
     border-color: var(--primary-500);
     color: white;
 }
+
+/* Health Gauge Meter */
+.health-gauge {
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--spacing-2);
+}
+
+.health-gauge-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: var(--gray-200);
+    stroke-width: 3;
+}
+
+.gauge-fill {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.gauge-fill.good {
+    stroke: var(--success);
+}
+
+.gauge-fill.medium {
+    stroke: var(--warning);
+}
+
+.gauge-fill.poor {
+    stroke: var(--danger);
+}
+
+.gauge-text {
+    fill: var(--gray-800);
+    font-size: 10px;
+    font-weight: 700;
+    text-anchor: middle;
+    transform: rotate(90deg);
+    transform-origin: 18px 18px;
+}
+
+.profile-stat .stat-alert {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 16px;
+}
+
+.profile-stat {
+    position: relative;
+}
+
+.profile-stat.warning .profile-stat-value {
+    color: var(--warning);
+}

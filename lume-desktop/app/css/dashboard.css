@@ -376,6 +376,16 @@
     overflow: hidden;
 }
 
+/* Ensure table rows are clickable */
+.table-container table tbody tr {
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.table-container table tbody tr:hover {
+    background: var(--gray-50);
+}
+
 .quick-view-header {
     display: flex;
     align-items: center;
@@ -629,4 +639,57 @@
     .header-user-info {
         display: none;
     }
+}
+
+/* Empty State Card */
+.empty-state-card {
+    text-align: center;
+    padding: 60px 40px;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--gray-200);
+}
+
+.empty-state-card .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-4);
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-400);
+}
+
+.empty-state-card h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0 0 var(--spacing-2);
+}
+
+.empty-state-card p {
+    color: var(--gray-500);
+    margin: 0 0 var(--spacing-5);
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-table-message {
+    text-align: center;
+    padding: var(--spacing-8) !important;
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+/* Metric trend neutral/no-change state */
+.metric-trend.neutral {
+    color: var(--gray-400);
+}
+
+.metric-trend .no-change {
+    font-size: var(--font-size-sm);
+    color: var(--gray-400);
 }

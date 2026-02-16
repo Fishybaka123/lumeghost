@@ -1,439 +1,646 @@
 // ===========================================
-// COMMUNICATIONS PAGE
+// COMMUNICATIONS PAGE - Communication Hub
 // ===========================================
+
+let currentChannel = 'all';
+let currentCommsSearch = '';
+let selectedClientId = null;
 
 function renderCommunicationsPage() {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
+    // Initialize communication service
+    if (CommunicationService) {
+        // Demo data generation removed per user request (Clear history)
+    }
+
+    const stats = CommunicationService ? CommunicationService.getStats() : { total: 0, sms: 0, email: 0, unread: 0 };
+    const recentMessages = CommunicationService ? CommunicationService.getRecent(15) : [];
+
     return `
-        <div class="app-layout">
-            ${createSidebar('communications')}
+        <div class="app-layout-topnav communications-page">
+            ${createTopNav('communications')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
+            <main class="main-content" id="main-content">
                 <div class="page-content">
                     <div class="page-header">
                         <div class="page-title-section">
-                            <h1>Communications</h1>
-                            <p>Manage all client communications and AI-powered automations</p>
+                            <h1>Communication Hub</h1>
+                            <p>Manage all client conversations in one place</p>
                         </div>
                         <div class="page-actions">
-                            <button class="btn btn-primary" onclick="showNewMessageModal()">
+                            <button class="btn btn-primary" onclick="openNewMessageModal()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
                                 New Message
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshCommunications()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                                Refresh
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportCommunications()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Export
                             </button>
                         </div>
                     </div>
                     
-                    <!-- Tab Navigation -->
-                    <div class="comms-tabs">
-                        <button class="comms-tab active" onclick="switchCommsTab('messages', this)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <!-- Tabs -->
+                    <div class="comm-tabs">
+                        <button class="comm-tab active" onclick="switchCommTab('conversations', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                             </svg>
-                            Messages
-                            <span class="tab-badge">12</span>
+                            Conversations
                         </button>
-                        <button class="comms-tab" onclick="switchCommsTab('automations', this)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                <path d="M2 17l10 5 10-5"/>
-                                <path d="M2 12l10 5 10-5"/>
+                        <button class="comm-tab" onclick="switchCommTab('automations', this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                             </svg>
-                            AI Automations
-                        </button>
-                        <button class="comms-tab" onclick="switchCommsTab('templates', this)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                            </svg>
-                            Templates
+                            Automations
                         </button>
                     </div>
                     
-                    <!-- Messages Section -->
-                    <div id="messages-section" class="comms-section active">
-                        <div class="comms-layout">
-                            <!-- Thread List -->
-                            <div class="thread-list">
-                                <div class="thread-search">
-                                    <div class="input-icon">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="11" cy="11" r="8"/>
-                                            <path d="m21 21-4.35-4.35"/>
-                                        </svg>
-                                        <input type="text" class="input" placeholder="Search conversations...">
-                                    </div>
-                                </div>
-                                ${renderMessageThreads()}
+                    <!-- Stats Cards -->
+                    <div class="comm-stats">
+                        <div class="comm-stat-card blue">
+                            <div class="comm-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
                             </div>
-                            
-                            <!-- Thread Detail -->
-                            <div class="thread-detail">
-                                ${renderThreadDetail()}
+                            <div class="comm-stat-content">
+                                <span class="comm-stat-label">Total Messages</span>
+                                <span class="comm-stat-value">${stats.total}</span>
+                            </div>
+                        </div>
+                        <div class="comm-stat-card cyan">
+                            <div class="comm-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
+                                </svg>
+                            </div>
+                            <div class="comm-stat-content">
+                                <span class="comm-stat-label">SMS Sent</span>
+                                <span class="comm-stat-value">${stats.sms}</span>
+                            </div>
+                        </div>
+                        <div class="comm-stat-card pink">
+                            <div class="comm-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                            </div>
+                            <div class="comm-stat-content">
+                                <span class="comm-stat-label">Emails Sent</span>
+                                <span class="comm-stat-value">${stats.email}</span>
+                            </div>
+                        </div>
+                        <div class="comm-stat-card orange">
+                            <div class="comm-stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                </svg>
+                            </div>
+                            <div class="comm-stat-content">
+                                <span class="comm-stat-label">Unread</span>
+                                <span class="comm-stat-value">${stats.unread}</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Automations Section -->
-                    <div id="automations-section" class="comms-section">
-                        ${renderAutomationsSection()}
+                    <!-- Search and Filter -->
+                    <div class="comm-filter-bar">
+                        <div class="comm-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" class="input" placeholder="Search by name, email, phone, or message content..." 
+                                   id="comm-search-input" onkeyup="searchCommunications(this.value)">
+                        </div>
+                        <select class="input channel-select" onchange="filterByChannel(this.value)">
+                            <option value="all">All Channels</option>
+                            <option value="sms">SMS</option>
+                            <option value="email">Email</option>
+                            <option value="nudge">Nudges</option>
+                            <option value="internal">Notes</option>
+                        </select>
                     </div>
                     
-                    <!-- Templates Section -->
-                    <div id="templates-section" class="comms-section">
-                        ${renderTemplatesSection()}
+                    <!-- Messages List -->
+                    <div class="comm-messages-container" id="conversations-tab">
+                        <div class="comm-messages-header">
+                            <h3>💬 Recent Conversations</h3>
+                        </div>
+                        <div class="comm-messages-list" id="comm-messages-list">
+                            ${renderMessagesList(recentMessages)}
+                        </div>
+                    </div>
+                    
+                    <!-- Automations Tab (hidden by default) -->
+                    <div class="comm-automations-container" id="automations-tab" style="display: none;">
+                        <div class="automation-card">
+                            <div class="automation-header">
+                                <h3>📅 Expiring Package Reminder</h3>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p>Automatically send reminder when package expires in 7 days</p>
+                            <div class="automation-stats">
+                                <span>Sent this month: 12</span>
+                            </div>
+                        </div>
+                        <div class="automation-card">
+                            <div class="automation-header">
+                                <h3>⚠️ Low Sessions Alert</h3>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p>Notify when client has 2 or fewer sessions remaining</p>
+                            <div class="automation-stats">
+                                <span>Sent this month: 8</span>
+                            </div>
+                        </div>
+                        <div class="automation-card">
+                            <div class="automation-header">
+                                <h3>👋 Re-engagement Campaign</h3>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <p>Reach out to clients who haven't visited in 30+ days</p>
+                            <div class="automation-stats">
+                                <span>Sent this month: 5</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
+        
+        <!-- Client History Modal -->
+        <div id="client-history-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeClientHistoryModal()"></div>
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3 id="client-history-title">Message History</h3>
+                    <button class="modal-close" onclick="closeClientHistoryModal()">×</button>
+                </div>
+                <div class="modal-body" id="client-history-body">
+                    <!-- Content will be set dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- New Message Modal -->
+        <div id="new-message-modal" class="modal" style="display: none;">
+            <div class="modal-backdrop" onclick="closeNewMessageModal()"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>New Message</h3>
+                    <button class="modal-close" onclick="closeNewMessageModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Select Client</label>
+                        <select id="new-msg-client" class="input" style="width: 100%; padding: 10px; border: 1px solid var(--gray-200); border-radius: var(--radius-md);">
+                            <option value="">-- Select a Client --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 500;">Message Type</label>
+                        <div class="type-selector" style="display: flex; gap: 8px;">
+                            <button type="button" class="type-btn active" onclick="setMsgType('sms', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">SMS</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('email', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Email</button>
+                            <button type="button" class="type-btn" onclick="setMsgType('note', this)" style="padding: 8px 16px; border: 1px solid var(--gray-200); border-radius: 20px; background: white; cursor: pointer;">Internal Note</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" style="font-weight: 500;">Message Content</label>
+                            <button type="button" class="btn btn-sm" onclick="generateAIMessage()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                                </svg>
+                                AI Generate
+                            </button>
+                        </div>
+                        <textarea id="new-msg-content" class="input" rows="5" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-family: inherit; resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="closeNewMessageModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="sendNewMessage()">Send Message</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
-const MESSAGE_THREADS = [
-    {
-        id: 1,
-        clientName: 'Sarah Mitchell',
-        initials: 'SM',
-        avatarColor: '#8B5CF6',
-        lastMessage: 'Thank you for the reminder! I\'ll book my appointment soon.',
-        lastTime: '2h ago',
-        unread: 1,
-        channel: 'sms'
-    },
-    {
-        id: 2,
-        clientName: 'Lisa Thompson',
-        initials: 'LT',
-        avatarColor: '#3B82F6',
-        lastMessage: 'Looking forward to my appointment next week!',
-        lastTime: '1d ago',
-        unread: 0,
-        channel: 'email'
-    },
-    {
-        id: 3,
-        clientName: 'Jennifer Adams',
-        initials: 'JA',
-        avatarColor: '#10B981',
-        lastMessage: 'Can I reschedule to Thursday instead?',
-        lastTime: '2d ago',
-        unread: 0,
-        channel: 'sms'
-    },
-    {
-        id: 4,
-        clientName: 'Michael Chen',
-        initials: 'MC',
-        avatarColor: '#F59E0B',
-        lastMessage: 'Thanks for the follow-up!',
-        lastTime: '3d ago',
-        unread: 0,
-        channel: 'email'
+// Global variable for current message type
+let currentMsgType = 'sms';
+
+function openNewMessageModal() {
+    const modal = document.getElementById('new-message-modal');
+    const select = document.getElementById('new-msg-client');
+
+    // Populate clients
+    if (select && ClientDataService) {
+        const clients = ClientDataService.getAll();
+        select.innerHTML = '<option value="">-- Select a Client --</option>' +
+            clients.map(c => `<option value="${c.id}">${c.firstName} ${c.lastName}</option>`).join('');
     }
-];
 
-function renderMessageThreads() {
-    return `
-        <div class="threads">
-            ${MESSAGE_THREADS.map(thread => `
-                <div class="thread-item ${thread.unread > 0 ? 'unread' : ''}" onclick="selectThread(${thread.id})">
-                    <div class="thread-avatar" style="background: ${thread.avatarColor};">
-                        ${thread.initials}
-                    </div>
-                    <div class="thread-content">
-                        <div class="thread-header">
-                            <span class="thread-name">${thread.clientName}</span>
-                            <span class="thread-time">${thread.lastTime}</span>
-                        </div>
-                        <div class="thread-preview">
-                            <span class="channel-icon">${thread.channel === 'sms' ? '💬' : '📧'}</span>
-                            <span class="preview-text">${thread.lastMessage}</span>
-                        </div>
-                    </div>
-                    ${thread.unread > 0 ? `<span class="unread-badge">${thread.unread}</span>` : ''}
-                </div>
-            `).join('')}
-        </div>
-    `;
+    // Reset form
+    document.getElementById('new-msg-content').value = '';
+    setMsgType('sms', document.querySelector('.type-btn')); // Reset to SMS
+
+    if (modal) modal.style.display = 'flex';
 }
 
-function renderThreadDetail() {
-    return `
-        <div class="thread-header-bar">
-            <div class="thread-client-info">
-                <div class="thread-avatar" style="background: #8B5CF6;">SM</div>
-                <div>
-                    <h3>Sarah Mitchell</h3>
-                    <span class="client-status">VIP Member • Last visit 6 days ago</span>
-                </div>
-            </div>
-            <div class="thread-actions">
-                <button class="btn btn-sm btn-ghost" title="Call">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
-                    </svg>
-                </button>
-                <button class="btn btn-sm btn-ghost" title="View Profile" onclick="navigateTo('/clients/1')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        
-        <div class="messages-container">
-            <div class="message-group">
-                <div class="message-date">Today</div>
-                
-                <div class="message outgoing">
-                    <div class="message-bubble">
-                        <p>Hi Sarah! It's been a while since your last HydraFacial. Ready for a refresh? ✨</p>
-                        <span class="message-time">2:30 PM</span>
-                    </div>
-                </div>
-                
-                <div class="message incoming">
-                    <div class="message-bubble">
-                        <p>Thank you for the reminder! I'll book my appointment soon.</p>
-                        <span class="message-time">4:15 PM</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="message-group">
-                <div class="message-date">Yesterday</div>
-                
-                <div class="message outgoing">
-                    <div class="message-bubble">
-                        <p>Hi Sarah! Just wanted to check in after your Botox treatment. How are you feeling? Any questions?</p>
-                        <span class="message-time">10:00 AM</span>
-                    </div>
-                </div>
-                
-                <div class="message incoming">
-                    <div class="message-bubble">
-                        <p>Everything looks great! So happy with the results. Thank you! 💕</p>
-                        <span class="message-time">11:30 AM</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="message-composer">
-            <div class="composer-tools">
-                <button class="composer-btn" title="Attach file">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                    </svg>
-                </button>
-                <button class="composer-btn ai-btn" title="AI Suggest" onclick="showAISuggestions()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                    AI
-                </button>
-            </div>
-            <input type="text" class="composer-input" placeholder="Type a message..." id="message-input">
-            <button class="composer-send" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
+function closeNewMessageModal() {
+    const modal = document.getElementById('new-message-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function setMsgType(type, btn) {
+    currentMsgType = type;
+
+    // Update UI
+    document.querySelectorAll('.type-btn').forEach(b => {
+        b.style.background = 'white';
+        b.style.color = 'var(--gray-700)';
+        b.style.borderColor = 'var(--gray-200)';
+        b.classList.remove('active');
+    });
+
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.background = 'var(--primary)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--primary)';
+    }
+}
+
+function generateAIMessage() {
+    const type = currentMsgType;
+    const clientSelect = document.getElementById('new-msg-client');
+    const clientId = clientSelect.value;
+    let clientName = 'Client';
+
+    if (clientId && ClientDataService) {
+        const client = ClientDataService.getById(clientId);
+        if (client) clientName = client.firstName;
+    }
+
+    const textarea = document.getElementById('new-msg-content');
+
+    // Simulate AI generation with templates
+    let templates = [];
+
+    if (type === 'sms') {
+        templates = [
+            `Hi ${clientName}, this is a reminder for your upcoming appointment at Lume. Please reply 'C' to confirm.`,
+            `Hello ${clientName}, we have a special offer on HydraFacials this week! Book now to save 15%.`,
+            `Hi ${clientName}, it's been a while since your last visit. We'd love to see you again soon!`
+        ];
+    } else if (type === 'email') {
+        templates = [
+            `Subject: Your Appointment Confirmation\n\nDear ${clientName},\n\nWe look forward to seeing you for your appointment. Please arrive 10 minutes early.\n\nBest,\nLume Med Spa`,
+            `Subject: Exclusive Member Offer\n\nHi ${clientName},\n\nAs a valued client, we're excited to offer you exclusive access to our new skincare line...\n\nWarmly,\nThe Lume Team`,
+            `Subject: Follow-up on your treatment\n\nDear ${clientName},\n\nWe hope you're enjoying the results of your recent treatment. Here are some aftercare tips...\n\nBest,\nLume Med Spa`
+        ];
+    } else {
+        templates = [
+            `Client expressed interest in upgrading to the Premium membership package.`,
+            `Follow up with ${clientName} in 2 weeks regarding skin reaction to new product.`,
+            `Note: Client prefers room temperature water and extra pillows.`
+        ];
+    }
+
+    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+
+    // "Type" the message for effect
+    textarea.value = "Generating AI draft...";
+    setTimeout(() => {
+        textarea.value = randomTemplate;
+    }, 800);
+}
+
+function sendNewMessage() {
+    const clientId = document.getElementById('new-msg-client').value;
+    const content = document.getElementById('new-msg-content').value;
+
+    if (!clientId) {
+        showToast('Please select a client', 'error');
+        return;
+    }
+
+    if (!content) {
+        showToast('Please enter a message', 'error');
+        return;
+    }
+
+    if (CommunicationService) {
+        let metadata = {};
+        if (currentMsgType === 'email') metadata.subject = 'New Message';
+
+        CommunicationService.log(clientId, currentMsgType, content, metadata);
+
+        showToast('Message sent successfully', 'success');
+        closeNewMessageModal();
+        refreshCommunications(); // Update the list
+    }
+}
+
+function renderMessagesList(messages) {
+    if (!messages || messages.length === 0) {
+        return `
+            <div class="comm-empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
-            </button>
+                <h3>No conversations yet</h3>
+                <p>Messages will appear here once you start communicating with clients</p>
+            </div>
+        `;
+    }
+
+    return messages.map(msg => renderMessageItem(msg)).join('');
+}
+
+function renderMessageItem(msg) {
+    const timeAgo = getTimeAgo(msg.timestamp);
+    const channelIcon = getChannelIcon(msg.channel || msg.type);
+    const channelLabel = getChannelLabel(msg.channel || msg.type);
+    const initials = msg.clientName ? msg.clientName.split(' ').map(n => n[0]).join('').toUpperCase() : '??';
+
+    // Truncate content
+    const maxLength = 80;
+    const content = msg.content.length > maxLength
+        ? msg.content.substring(0, maxLength) + '...'
+        : msg.content;
+
+    return `
+        <div class="comm-message-item ${msg.read ? '' : 'unread'}" onclick="viewClientHistory(${msg.clientId})">
+            <div class="comm-message-avatar">
+                ${initials}
+            </div>
+            <div class="comm-message-content">
+                <div class="comm-message-header">
+                    <span class="comm-message-name">${msg.clientName}</span>
+                    <span class="comm-message-time">${timeAgo}</span>
+                </div>
+                <div class="comm-message-preview">
+                    ${msg.subject ? `<strong>${msg.subject}:</strong> ` : ''}${content}
+                </div>
+                <div class="comm-message-meta">
+                    <span class="comm-channel-badge ${msg.channel || msg.type}">
+                        ${channelIcon} ${channelLabel}
+                    </span>
+                    ${msg.nudgeType ? `<span class="comm-nudge-type">${msg.nudgeType}</span>` : ''}
+                </div>
+            </div>
+            ${!msg.read ? '<div class="comm-unread-dot"></div>' : ''}
         </div>
     `;
 }
 
-function renderAutomationsSection() {
-    return `
-        <div class="automations-grid">
-            <div class="automation-card">
-                <div class="automation-status active"></div>
-                <div class="automation-header">
-                    <span class="automation-icon">🔄</span>
-                    <h4>Post-Treatment Follow-up</h4>
-                </div>
-                <p class="automation-desc">Automatically sends a check-in message 24 hours after any treatment.</p>
-                <div class="automation-stats">
-                    <span>📤 234 sent</span>
-                    <span>📬 89% open rate</span>
-                </div>
-                <div class="automation-actions">
-                    <button class="btn btn-sm btn-ghost">Edit</button>
-                    <button class="btn btn-sm btn-ghost">Pause</button>
-                </div>
+function getChannelIcon(channel) {
+    switch (channel) {
+        case 'sms': return '📱';
+        case 'email': return '✉️';
+        case 'nudge': return '🚀';
+        case 'call': return '📞';
+        case 'internal':
+        case 'note': return '📝';
+        default: return '💬';
+    }
+}
+
+function getChannelLabel(channel) {
+    switch (channel) {
+        case 'sms': return 'SMS';
+        case 'email': return 'Email';
+        case 'nudge': return 'Nudge';
+        case 'call': return 'Call';
+        case 'internal':
+        case 'note': return 'Note';
+        default: return 'Message';
+    }
+}
+
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+}
+
+function switchCommTab(tab, button) {
+    // Update tab buttons
+    document.querySelectorAll('.comm-tab').forEach(t => t.classList.remove('active'));
+    button.classList.add('active');
+
+    // Show/hide tab content
+    if (tab === 'conversations') {
+        document.getElementById('conversations-tab').style.display = 'block';
+        document.getElementById('automations-tab').style.display = 'none';
+    } else {
+        document.getElementById('conversations-tab').style.display = 'none';
+        document.getElementById('automations-tab').style.display = 'block';
+    }
+}
+
+function searchCommunications(term) {
+    currentCommsSearch = term;
+    let messages;
+
+    if (term.length > 0) {
+        messages = CommunicationService.search(term);
+    } else {
+        messages = CommunicationService.getRecent(15);
+    }
+
+    // Apply channel filter
+    if (currentChannel !== 'all') {
+        messages = messages.filter(m => m.channel === currentChannel || m.type === currentChannel);
+    }
+
+    const container = document.getElementById('comm-messages-list');
+    if (container) {
+        container.innerHTML = renderMessagesList(messages);
+    }
+}
+
+function filterByChannel(channel) {
+    currentChannel = channel;
+    let messages;
+
+    if (channel === 'all') {
+        messages = CommunicationService.getRecent(15);
+    } else {
+        messages = CommunicationService.getByChannel(channel);
+        if (messages.length === 0) {
+            messages = CommunicationService.getByType(channel);
+        }
+    }
+
+    // Apply search filter
+    if (currentCommsSearch) {
+        const q = currentCommsSearch.toLowerCase();
+        messages = messages.filter(m =>
+            m.clientName.toLowerCase().includes(q) ||
+            m.content.toLowerCase().includes(q) ||
+            m.subject?.toLowerCase().includes(q)
+        );
+    }
+
+    const container = document.getElementById('comm-messages-list');
+    if (container) {
+        container.innerHTML = renderMessagesList(messages);
+    }
+}
+
+function viewClientHistory(clientId) {
+    const client = ClientDataService ? ClientDataService.getById(clientId) : null;
+    const messages = CommunicationService ? CommunicationService.getByClient(clientId) : [];
+
+    const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client';
+
+    const modal = document.getElementById('client-history-modal');
+    const title = document.getElementById('client-history-title');
+    const body = document.getElementById('client-history-body');
+
+    if (!modal || !body) return;
+
+    title.textContent = `📋 ${clientName} - Communication History`;
+
+    // Mark all as read
+    messages.forEach(m => CommunicationService.markAsRead(m.id));
+
+    body.innerHTML = `
+        <div class="client-history-header">
+            <div class="client-history-info">
+                <p><strong>Email:</strong> ${client?.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${client?.phone || 'N/A'}</p>
+                <p><strong>Total Messages:</strong> ${messages.length}</p>
             </div>
-            
-            <div class="automation-card">
-                <div class="automation-status active"></div>
-                <div class="automation-header">
-                    <span class="automation-icon">⚠️</span>
-                    <h4>At-Risk Re-engagement</h4>
-                </div>
-                <p class="automation-desc">Sends personalized offers to clients with churn risk > 50%.</p>
-                <div class="automation-stats">
-                    <span>📤 45 sent</span>
-                    <span>💰 $12,400 saved</span>
-                </div>
-                <div class="automation-actions">
-                    <button class="btn btn-sm btn-ghost">Edit</button>
-                    <button class="btn btn-sm btn-ghost">Pause</button>
-                </div>
-            </div>
-            
-            <div class="automation-card">
-                <div class="automation-status paused"></div>
-                <div class="automation-header">
-                    <span class="automation-icon">🎂</span>
-                    <h4>Birthday Rewards</h4>
-                </div>
-                <p class="automation-desc">Sends birthday wishes with a special discount code.</p>
-                <div class="automation-stats">
-                    <span>📤 18 sent</span>
-                    <span>🎁 72% redeemed</span>
-                </div>
-                <div class="automation-actions">
-                    <button class="btn btn-sm btn-ghost">Edit</button>
-                    <button class="btn btn-sm btn-primary">Activate</button>
-                </div>
-            </div>
-            
-            <div class="automation-card add-new">
-                <button class="add-automation-btn" onclick="showNewAutomationModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                    <span>Create Automation</span>
+            <div class="client-history-actions">
+                <button class="btn btn-secondary btn-sm" onclick="sendNudge(${clientId}); closeClientHistoryModal();">
+                    Send Nudge
                 </button>
             </div>
         </div>
         
-        <!-- AI Suggestions Section -->
-        <div class="ai-suggestions-section">
-            <h3>🤖 AI-Suggested Messages</h3>
-            <div class="ai-suggestions-list">
-                ${renderAISuggestions()}
-            </div>
-        </div>
-    `;
-}
-
-function renderAISuggestions() {
-    const suggestions = [
-        {
-            client: 'Emily Rodriguez',
-            type: 'Re-engagement',
-            message: 'Hi Emily! We noticed it\'s been a while since your last visit. We\'d love to see you again! Book this week for 15% off your next facial. 💆‍♀️',
-            confidence: 92
-        },
-        {
-            client: 'Michael Chen',
-            type: 'Follow-up',
-            message: 'Hi Michael! How is your skin feeling after the CoolSculpting consultation? Ready to schedule your first session? We have openings this week!',
-            confidence: 85
-        }
-    ];
-
-    return suggestions.map(s => `
-        <div class="ai-suggestion-card">
-            <div class="suggestion-header">
-                <span class="suggestion-client">${s.client}</span>
-                <span class="suggestion-type">${s.type}</span>
-                <span class="suggestion-confidence">${s.confidence}% match</span>
-            </div>
-            <p class="suggestion-message">${s.message}</p>
-            <div class="suggestion-actions">
-                <button class="btn btn-sm btn-ghost">Edit</button>
-                <button class="btn btn-sm btn-primary" onclick="sendAISuggestion('${s.client}')">Send</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function renderTemplatesSection() {
-    const templates = [
-        { name: 'Welcome Message', category: 'Onboarding', usage: 145 },
-        { name: 'Appointment Reminder', category: 'Scheduling', usage: 312 },
-        { name: 'Post-Treatment Care', category: 'Follow-up', usage: 234 },
-        { name: 'Referral Thank You', category: 'Loyalty', usage: 67 },
-        { name: 'Re-engagement Offer', category: 'Retention', usage: 89 }
-    ];
-
-    return `
-        <div class="templates-grid">
-            ${templates.map(t => `
-                <div class="template-card">
-                    <div class="template-header">
-                        <span class="template-category">${t.category}</span>
-                        <span class="template-usage">Used ${t.usage}x</span>
+        <div class="client-history-timeline">
+            ${messages.length > 0 ? messages.map(msg => `
+                <div class="history-item">
+                    <div class="history-item-icon ${msg.channel || msg.type}">
+                        ${getChannelIcon(msg.channel || msg.type)}
                     </div>
-                    <h4 class="template-name">${t.name}</h4>
-                    <div class="template-actions">
-                        <button class="btn btn-sm btn-ghost">Preview</button>
-                        <button class="btn btn-sm btn-ghost">Edit</button>
-                        <button class="btn btn-sm btn-primary">Use</button>
+                    <div class="history-item-content">
+                        <div class="history-item-header">
+                            <span class="history-item-type">${getChannelLabel(msg.channel || msg.type)}</span>
+                            <span class="history-item-time">${formatDateTime(msg.timestamp)}</span>
+                        </div>
+                        ${msg.subject ? `<div class="history-item-subject">${msg.subject}</div>` : ''}
+                        <div class="history-item-message">${msg.content}</div>
                     </div>
                 </div>
-            `).join('')}
-            
-            <div class="template-card add-new">
-                <button class="add-template-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="16"/>
-                        <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                    <span>Create Template</span>
-                </button>
-            </div>
+            `).join('') : `
+                <div class="comm-empty-state">
+                    <p>No communication history with this client yet.</p>
+                    <button class="btn btn-primary" onclick="sendNudge(${clientId}); closeClientHistoryModal();">
+                        Send First Message
+                    </button>
+                </div>
+            `}
         </div>
     `;
+
+    modal.style.display = 'flex';
 }
 
-function switchCommsTab(tab, btn) {
-    // Update active tab button
-    document.querySelectorAll('.comms-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-
-    // Show corresponding section
-    document.querySelectorAll('.comms-section').forEach(s => s.classList.remove('active'));
-    document.getElementById(`${tab}-section`).classList.add('active');
-}
-
-function selectThread(id) {
-    console.log('Selected thread:', id);
-    document.querySelectorAll('.thread-item').forEach(t => t.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-}
-
-function sendMessage() {
-    const input = document.getElementById('message-input');
-    if (input.value.trim()) {
-        showToast('Message sent! 📤', 'success');
-        input.value = '';
+function closeClientHistoryModal() {
+    const modal = document.getElementById('client-history-modal');
+    if (modal) {
+        modal.style.display = 'none';
     }
+    // Refresh the list to update read status
+    navigateTo('/communications');
 }
 
-function showAISuggestions() {
-    showToast('🤖 AI is generating suggestions...', 'info');
+function formatDateTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
 }
 
-function sendAISuggestion(client) {
-    showToast(`Message sent to ${client}! 📤`, 'success');
+function refreshCommunications() {
+    navigateTo('/communications');
+    showToast('✓ Refreshed', 'success');
 }
 
-function showNewMessageModal() {
-    showToast('Opening new message composer...', 'info');
-}
+function exportCommunications() {
+    const messages = CommunicationService ? CommunicationService.getAll() : [];
 
-function showNewAutomationModal() {
-    showToast('Opening automation builder...', 'info');
+    // Create CSV
+    const headers = ['Date', 'Client', 'Email', 'Phone', 'Channel', 'Subject', 'Message'];
+    const rows = messages.map(m => [
+        new Date(m.timestamp).toISOString(),
+        m.clientName,
+        m.clientEmail || '',
+        m.clientPhone || '',
+        m.channel || m.type,
+        m.subject || '',
+        `"${m.content.replace(/"/g, '""')}"`
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `communications_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+
+    showToast('✓ Exported communications', 'success');
 }

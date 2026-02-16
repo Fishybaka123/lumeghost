@@ -1,22 +1,26 @@
 // ===========================================
-// ANALYTICS PAGE
+// ANALYTICS PAGE - Redesigned
 // ===========================================
 
 function renderAnalyticsPage() {
-    const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
+    const user = AuthService ? AuthService.getCurrentUser() :
+        JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
+
+    // Get dynamic data from clients
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    const hasData = clients.length > 0;
 
     return `
-        <div class="app-layout">
-            ${createSidebar('analytics')}
+        <div class="app-layout-topnav">
+            ${createTopNav('analytics')}
             
-            <main class="main-content">
-                ${createHeader(user)}
-                
-                <div class="page-content">
+            <main class="main-content" id="main-content">
+                <div class="page-content analytics-page">
+                    <!-- Page Header -->
                     <div class="page-header">
                         <div class="page-title-section">
-                            <h1>Analytics</h1>
-                            <p>Track your med spa performance and client retention metrics</p>
+                            <h1>📊 Analytics</h1>
+                            <p>Track performance, monitor retention, and discovery growth opportunities</p>
                         </div>
                         <div class="page-actions">
                             <select class="filter-select" id="analytics-timeframe" onchange="updateAnalyticsTimeframe(this.value)">
@@ -25,7 +29,7 @@ function renderAnalyticsPage() {
                                 <option value="last30">Last 30 Days</option>
                                 <option value="last90">Last 90 Days</option>
                             </select>
-                            <button class="btn btn-secondary" onclick="exportAnalyticsReport()">
+                            <button class="btn btn-primary" onclick="exportAnalyticsReport()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                     <polyline points="7 10 12 15 17 10"/>
@@ -36,337 +40,528 @@ function renderAnalyticsPage() {
                         </div>
                     </div>
                     
-                    <!-- Key Metrics Row -->
-                    <div class="analytics-metrics-row">
-                        ${createAnalyticsMetric('Revenue MTD', '$42,580', '+23%', 'positive', 'dollar-sign')}
-                        ${createAnalyticsMetric('Revenue YTD', '$312,450', '+18%', 'positive', 'trending-up')}
-                        ${createAnalyticsMetric('Churn Rate', '8.2%', '-2.1%', 'positive', 'users')}
-                        ${createAnalyticsMetric('Avg Client LTV', '$2,340', '+12%', 'positive', 'heart')}
-                    </div>
-                    
-                    <!-- Charts Row -->
-                    <div class="analytics-charts-grid">
-                        <!-- Revenue Chart -->
-                        <div class="analytics-card large">
-                            <div class="analytics-card-header">
-                                <h3>Revenue Trend</h3>
-                                <div class="chart-legend">
-                                    <span class="legend-item"><span class="legend-color" style="background: var(--primary);"></span> This Year</span>
-                                    <span class="legend-item"><span class="legend-color" style="background: var(--gray-300);"></span> Last Year</span>
-                                </div>
-                            </div>
-                            <div class="chart-container" id="revenue-chart">
-                                ${renderBarChart(ANALYTICS_DATA.revenueByMonth)}
-                            </div>
-                        </div>
-                        
-                        <!-- Churn Analysis -->
-                        <div class="analytics-card">
-                            <div class="analytics-card-header">
-                                <h3>Churn Analysis</h3>
-                            </div>
-                            <div class="churn-gauge-container">
-                                ${renderChurnGauge(8.2)}
-                            </div>
-                            <div class="churn-stats">
-                                <div class="churn-stat">
-                                    <span class="churn-stat-value">12</span>
-                                    <span class="churn-stat-label">Clients Lost</span>
-                                </div>
-                                <div class="churn-stat">
-                                    <span class="churn-stat-value">$8,400</span>
-                                    <span class="churn-stat-label">Revenue Lost</span>
-                                </div>
-                                <div class="churn-stat">
-                                    <span class="churn-stat-value">14 mo</span>
-                                    <span class="churn-stat-label">Avg Lifespan</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Second Row -->
-                    <div class="analytics-charts-grid">
-                        <!-- Treatment Popularity -->
-                        <div class="analytics-card">
-                            <div class="analytics-card-header">
-                                <h3>Treatment Popularity</h3>
-                                <button class="btn btn-sm btn-ghost">View All</button>
-                            </div>
-                            <div class="treatment-bars">
-                                ${renderTreatmentBars(ANALYTICS_DATA.treatmentPopularity)}
-                            </div>
-                        </div>
-                        
-                        <!-- Client Acquisition -->
-                        <div class="analytics-card">
-                            <div class="analytics-card-header">
-                                <h3>Client Acquisition</h3>
-                            </div>
-                            <div class="acquisition-sources">
-                                ${renderAcquisitionSources(ANALYTICS_DATA.acquisitionSources)}
-                            </div>
-                        </div>
-                        
-                        <!-- Retention Funnel -->
-                        <div class="analytics-card">
-                            <div class="analytics-card-header">
-                                <h3>Retention Funnel</h3>
-                            </div>
-                            <div class="retention-funnel">
-                                ${renderRetentionFunnel()}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- AI Insights -->
-                    <div class="analytics-insights-section">
-                        <h3>🤖 AI Insights</h3>
-                        <div class="insights-grid">
-                            ${renderAnalyticsInsights()}
-                        </div>
-                    </div>
+                    ${hasData ? renderAnalyticsContent(clients) : renderEmptyAnalytics()}
                 </div>
             </main>
         </div>
     `;
 }
 
-// Analytics Data
-const ANALYTICS_DATA = {
-    revenueByMonth: [
-        { month: 'Jan', current: 28500, previous: 24000 },
-        { month: 'Feb', current: 32100, previous: 26500 },
-        { month: 'Mar', current: 29800, previous: 28000 },
-        { month: 'Apr', current: 35600, previous: 30200 },
-        { month: 'May', current: 38200, previous: 31500 },
-        { month: 'Jun', current: 42580, previous: 34800 }
-    ],
-    treatmentPopularity: [
-        { name: 'Botox', count: 145, revenue: 65250, color: '#00B8D9' },
-        { name: 'HydraFacial', count: 98, revenue: 24500, color: '#4FD1C5' },
-        { name: 'Laser Hair', count: 76, revenue: 22800, color: '#F59E0B' },
-        { name: 'Microneedling', count: 54, revenue: 21600, color: '#FF6B6B' },
-        { name: 'Chemical Peel', count: 42, revenue: 12600, color: '#8B5CF6' }
-    ],
-    acquisitionSources: [
-        { source: 'Referrals', percentage: 35, color: '#10B981' },
-        { source: 'Google', percentage: 28, color: '#3B82F6' },
-        { source: 'Instagram', percentage: 22, color: '#EC4899' },
-        { source: 'Walk-ins', percentage: 10, color: '#F59E0B' },
-        { source: 'Other', percentage: 5, color: '#6B7280' }
-    ]
-};
+function renderEmptyAnalytics() {
+    return `
+        <div class="analytics-empty-state">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                    <path d="M18 20V10"/>
+                    <path d="M12 20V4"/>
+                    <path d="M6 20v-6"/>
+                </svg>
+            </div>
+            <h2>No Data Yet</h2>
+            <p>Import your client data to see analytics and insights</p>
+            <button class="btn btn-primary" onclick="navigateTo('/clients')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import Clients
+            </button>
+        </div>
+    `;
+}
 
-function createAnalyticsMetric(label, value, change, trend, icon) {
-    const isPositive = trend === 'positive';
-    const iconSvg = getAnalyticsIcon(icon);
+function renderAnalyticsContent(clients) {
+    const stats = calculateAnalyticsStats(clients);
 
     return `
-        <div class="analytics-metric-card">
+        <!-- Notifications & Insights Section (Moved to Top) -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <div class="section-header-icon coral">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Notifications & AI Insights</h2>
+                    <p>Recent alerts, updates, and smart recommendations</p>
+                </div>
+            </div>
+            
+            <div class="insights-cards">
+                ${renderNotificationsAndInsights(stats, clients, 3)}
+            </div>
+        </section>
+
+        <!-- Key Metrics Section -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <div class="section-header-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                        <polyline points="17 6 23 6 23 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Key Metrics</h2>
+                    <p>Your most important performance indicators</p>
+                </div>
+            </div>
+            
+            <div class="analytics-metrics-grid">
+                ${createAnalyticsMetric('Total Clients', stats.totalClients || 0, '', 'users', 'blue')}
+                ${createAnalyticsMetric('At-Risk Clients', stats.atRisk || 0, (stats.atRiskPercent || 0) + '%', 'alert-triangle', stats.atRisk > 0 ? 'coral' : 'emerald')}
+                ${createAnalyticsMetric('Avg Health Score', stats.avgHealth || 0, 'of 100', 'heart', stats.avgHealth >= 70 ? 'emerald' : 'amber')}
+                ${createAnalyticsMetric('Total Revenue', '$' + formatNumber(stats.totalRevenue || 0), 'lifetime', 'dollar-sign', 'purple')}
+            </div>
+        </section>
+        
+        <!-- Client Health Section -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <div class="section-header-icon emerald">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Client Health Overview</h2>
+                    <p>Monitor the wellness of your client relationships</p>
+                </div>
+            </div>
+            
+            <div class="analytics-cards-row">
+                <div class="analytics-card">
+                    <h3>Health Distribution</h3>
+                    <div class="health-distribution">
+                        ${renderHealthDistribution(stats)}
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3>Churn Risk Analysis</h3>
+                    <div class="churn-analysis">
+                        ${renderChurnAnalysis(stats)}
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Retention Section -->
+        <section class="analytics-section">
+            <div class="section-header">
+                <div class="section-header-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>Retention Insights</h2>
+                    <p>Understand how clients move through your business</p>
+                </div>
+            </div>
+            
+            <div class="analytics-cards-row three-col">
+                <div class="analytics-card">
+                    <h3>Membership Breakdown</h3>
+                    <div class="membership-breakdown">
+                        ${renderMembershipBreakdown(stats)}
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3>Visit Frequency</h3>
+                    <div class="visit-frequency">
+                        ${renderVisitFrequency(stats)}
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <h3>Expiring Soon</h3>
+                    <div class="expiring-clients">
+                        ${renderExpiringClients(stats)}
+                    </div>
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function calculateAnalyticsStats(clients) {
+    const totalClients = clients.length;
+    const atRisk = clients.filter(c => c.churnRisk >= 60).length;
+    const healthy = clients.filter(c => c.healthScore >= 70).length;
+    const moderate = clients.filter(c => c.healthScore >= 40 && c.healthScore < 70).length;
+    const poor = clients.filter(c => c.healthScore < 40).length;
+
+    const avgHealth = totalClients > 0
+        ? Math.round(clients.reduce((sum, c) => sum + (c.healthScore || 0), 0) / totalClients)
+        : 0;
+
+    const totalRevenue = clients.reduce((sum, c) => sum + (c.totalSpend || 0), 0);
+
+    // Membership counts
+    const vip = clients.filter(c => c.membershipType === 'vip').length;
+    const premium = clients.filter(c => c.membershipType === 'premium').length;
+    const basic = clients.filter(c => c.membershipType === 'basic').length;
+    const none = clients.filter(c => !c.membershipType || c.membershipType === 'none').length;
+
+    // Expiring soon (within 14 days)
+    const expiringSoon = clients.filter(c => {
+        if (!c.expireDate) return false;
+        const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
+        return days <= 14 && days > 0;
+    }).length;
+
+    // Low sessions
+    const lowSessions = clients.filter(c => c.remainingSessions !== undefined && c.remainingSessions <= 2).length;
+
+    return {
+        totalClients,
+        atRisk,
+        atRiskPercent: totalClients > 0 ? Math.round((atRisk / totalClients) * 100) : 0,
+        healthy,
+        healthyPercent: totalClients > 0 ? Math.round((healthy / totalClients) * 100) : 0,
+        moderate,
+        moderatePercent: totalClients > 0 ? Math.round((moderate / totalClients) * 100) : 0,
+        poor,
+        poorPercent: totalClients > 0 ? Math.round((poor / totalClients) * 100) : 0,
+        avgHealth,
+        totalRevenue,
+        vip, premium, basic, none,
+        expiringSoon,
+        lowSessions
+    };
+}
+
+function createAnalyticsMetric(label, value, subtitle, icon, color) {
+    const iconSvg = getMetricIcon(icon);
+
+    return `
+        <div class="analytics-metric ${color}">
             <div class="analytics-metric-icon">
                 ${iconSvg}
             </div>
-            <div class="analytics-metric-content">
-                <span class="analytics-metric-label">${label}</span>
-                <span class="analytics-metric-value">${value}</span>
-                <span class="analytics-metric-change ${isPositive ? 'positive' : 'negative'}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                        <path d="${isPositive ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}"/>
-                    </svg>
-                    ${change}
-                </span>
+            <div class="analytics-metric-info">
+                <span class="metric-value">${value}</span>
+                <span class="metric-label">${label}</span>
+                ${subtitle ? `<span class="metric-subtitle">${subtitle}</span>` : ''}
             </div>
         </div>
     `;
 }
 
-function getAnalyticsIcon(type) {
+function getMetricIcon(type) {
     const icons = {
-        'dollar-sign': '<circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M8 10h8"/><path d="M8 14h8"/>',
-        'trending-up': '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
         'users': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-        'heart': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'
+        'alert-triangle': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        'heart': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+        'dollar-sign': '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'
     };
 
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">${icons[type] || icons['dollar-sign']}</svg>`;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">${icons[type] || icons['users']}</svg>`;
 }
 
-function renderBarChart(data) {
-    const maxValue = Math.max(...data.map(d => Math.max(d.current, d.previous)));
+function renderHealthDistribution(stats) {
+    const total = stats.totalClients || 1;
 
     return `
-        <div class="bar-chart">
-            <div class="bar-chart-bars">
-                ${data.map(d => `
-                    <div class="bar-group">
-                        <div class="bar-pair">
-                            <div class="bar current" style="height: ${(d.current / maxValue) * 100}%;" title="$${d.current.toLocaleString()}"></div>
-                            <div class="bar previous" style="height: ${(d.previous / maxValue) * 100}%;" title="$${d.previous.toLocaleString()}"></div>
-                        </div>
-                        <span class="bar-label">${d.month}</span>
-                    </div>
-                `).join('')}
+        <div class="health-bars">
+            <div class="health-bar-row">
+                <div class="health-bar-label">
+                    <span class="dot emerald"></span>
+                    <span>Healthy (70+)</span>
+                </div>
+                <div class="health-bar-track">
+                    <div class="health-bar-fill emerald" style="width: ${stats.healthyPercent}%"></div>
+                </div>
+                <span class="health-bar-value">${stats.healthy}</span>
             </div>
-            <div class="bar-chart-y-axis">
-                <span>$${(maxValue / 1000).toFixed(0)}k</span>
-                <span>$${(maxValue / 2000).toFixed(0)}k</span>
-                <span>$0</span>
+            <div class="health-bar-row">
+                <div class="health-bar-label">
+                    <span class="dot amber"></span>
+                    <span>Moderate (40-69)</span>
+                </div>
+                <div class="health-bar-track">
+                    <div class="health-bar-fill amber" style="width: ${stats.moderatePercent}%"></div>
+                </div>
+                <span class="health-bar-value">${stats.moderate}</span>
+            </div>
+            <div class="health-bar-row">
+                <div class="health-bar-label">
+                    <span class="dot coral"></span>
+                    <span>At Risk (<40)</span>
+                </div>
+                <div class="health-bar-track">
+                    <div class="health-bar-fill coral" style="width: ${stats.poorPercent}%"></div>
+                </div>
+                <span class="health-bar-value">${stats.poor}</span>
             </div>
         </div>
     `;
 }
 
-function renderChurnGauge(percentage) {
-    const angle = (percentage / 100) * 180;
+function renderChurnAnalysis(stats) {
+    const riskLevel = stats.atRiskPercent >= 30 ? 'High' : stats.atRiskPercent >= 15 ? 'Moderate' : 'Low';
+    const riskColor = stats.atRiskPercent >= 30 ? 'coral' : stats.atRiskPercent >= 15 ? 'amber' : 'emerald';
 
     return `
-        <div class="churn-gauge">
-            <svg viewBox="0 0 200 120" class="gauge-svg">
-                <!-- Background arc -->
-                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#E5E7EB" stroke-width="16" stroke-linecap="round"/>
-                
-                <!-- Value arc -->
-                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" stroke-width="16" stroke-linecap="round"
-                      stroke-dasharray="${(percentage / 100) * 251.2} 251.2"/>
-                
-                <!-- Gradient definition -->
-                <defs>
-                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#10B981"/>
-                        <stop offset="50%" stop-color="#F59E0B"/>
-                        <stop offset="100%" stop-color="#EF4444"/>
-                    </linearGradient>
-                </defs>
-                
-                <!-- Center text -->
-                <text x="100" y="85" text-anchor="middle" class="gauge-value">${percentage}%</text>
-                <text x="100" y="105" text-anchor="middle" class="gauge-label">Churn Rate</text>
-            </svg>
-        </div>
-    `;
-}
-
-function renderTreatmentBars(treatments) {
-    const maxCount = Math.max(...treatments.map(t => t.count));
-
-    return treatments.map(t => `
-        <div class="treatment-bar-row">
-            <div class="treatment-info">
-                <span class="treatment-name">${t.name}</span>
-                <span class="treatment-count">${t.count}</span>
+        <div class="churn-summary">
+            <div class="churn-gauge-simple">
+                <div class="gauge-circle ${riskColor}">
+                    <span class="gauge-value">${stats.atRiskPercent}%</span>
+                </div>
+                <div class="gauge-info">
+                    <span class="gauge-label">Churn Risk Rate</span>
+                    <span class="gauge-status ${riskColor}">${riskLevel} Risk</span>
+                </div>
             </div>
-            <div class="treatment-bar-container">
-                <div class="treatment-bar" style="width: ${(t.count / maxCount) * 100}%; background: ${t.color};"></div>
-            </div>
-            <span class="treatment-revenue">$${(t.revenue / 1000).toFixed(1)}k</span>
-        </div>
-    `).join('');
-}
-
-function renderAcquisitionSources(sources) {
-    return `
-        <div class="acquisition-chart">
-            <div class="donut-chart">
-                ${renderDonutChart(sources)}
-            </div>
-            <div class="acquisition-legend">
-                ${sources.map(s => `
-                    <div class="legend-row">
-                        <span class="legend-dot" style="background: ${s.color};"></span>
-                        <span class="legend-name">${s.source}</span>
-                        <span class="legend-value">${s.percentage}%</span>
-                    </div>
-                `).join('')}
+            <div class="churn-detail">
+                <div class="churn-stat">
+                    <span class="stat-num">${stats.atRisk}</span>
+                    <span class="stat-label">At-Risk Clients</span>
+                </div>
+                <div class="churn-stat">
+                    <span class="stat-num">${stats.lowSessions}</span>
+                    <span class="stat-label">Low Sessions (≤2)</span>
+                </div>
             </div>
         </div>
     `;
 }
 
-function renderDonutChart(sources) {
-    let currentAngle = 0;
-    const radius = 50;
-    const cx = 60;
-    const cy = 60;
-
-    const paths = sources.map(source => {
-        const angle = (source.percentage / 100) * 360;
-        const startAngle = currentAngle;
-        const endAngle = currentAngle + angle;
-
-        const x1 = cx + radius * Math.cos((startAngle - 90) * Math.PI / 180);
-        const y1 = cy + radius * Math.sin((startAngle - 90) * Math.PI / 180);
-        const x2 = cx + radius * Math.cos((endAngle - 90) * Math.PI / 180);
-        const y2 = cy + radius * Math.sin((endAngle - 90) * Math.PI / 180);
-
-        const largeArc = angle > 180 ? 1 : 0;
-
-        currentAngle = endAngle;
-
-        return `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${source.color}"/>`;
-    }).join('');
-
-    return `
-        <svg viewBox="0 0 120 120" class="donut-svg">
-            ${paths}
-            <circle cx="${cx}" cy="${cy}" r="30" fill="white"/>
-        </svg>
-    `;
-}
-
-function renderRetentionFunnel() {
-    const stages = [
-        { label: 'New Clients', value: 100, count: 247 },
-        { label: '2nd Visit', value: 78, count: 193 },
-        { label: '3+ Visits', value: 62, count: 153 },
-        { label: 'Members', value: 45, count: 111 },
-        { label: 'VIP', value: 18, count: 44 }
+function renderMembershipBreakdown(stats) {
+    const total = stats.totalClients || 1;
+    const items = [
+        { label: 'VIP', count: stats.vip, color: 'purple', percent: Math.round((stats.vip / total) * 100) },
+        { label: 'Premium', count: stats.premium, color: 'blue', percent: Math.round((stats.premium / total) * 100) },
+        { label: 'Basic', count: stats.basic, color: 'cyan', percent: Math.round((stats.basic / total) * 100) },
+        { label: 'None', count: stats.none, color: 'gray', percent: Math.round((stats.none / total) * 100) }
     ];
 
-    return stages.map((stage, i) => `
-        <div class="funnel-stage">
-            <div class="funnel-bar" style="width: ${stage.value}%; background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);"></div>
-            <div class="funnel-info">
-                <span class="funnel-label">${stage.label}</span>
-                <span class="funnel-count">${stage.count}</span>
-                <span class="funnel-percent">${stage.value}%</span>
-            </div>
+    return `
+        <div class="membership-list">
+            ${items.map(item => `
+                <div class="membership-row">
+                    <span class="membership-dot ${item.color}"></span>
+                    <span class="membership-label">${item.label}</span>
+                    <span class="membership-count">${item.count}</span>
+                    <span class="membership-percent">${item.percent}%</span>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
 
-function renderAnalyticsInsights() {
-    const insights = [
-        {
-            type: 'success',
-            title: 'Strong Retention',
-            message: 'Your 78% second-visit rate is 15% above industry average. Keep up the excellent follow-up communications!'
-        },
-        {
+function renderVisitFrequency(stats) {
+    // This would need actual visit data - showing placeholder structure
+    return `
+        <div class="visit-summary">
+            <div class="visit-stat-large">
+                <span class="visit-num">${stats.totalClients}</span>
+                <span class="visit-label">Total Clients</span>
+            </div>
+            <p class="visit-note">Import client visit history to see detailed frequency analytics</p>
+        </div>
+    `;
+}
+
+function renderExpiringClients(stats) {
+    if (stats.expiringSoon === 0) {
+        return `
+            <div class="expiring-empty">
+                <span class="check-icon">✓</span>
+                <p>No memberships expiring in the next 14 days</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="expiring-alert">
+            <div class="expiring-count">
+                <span class="count-num">${stats.expiringSoon}</span>
+                <span class="count-label">Expiring Soon</span>
+            </div>
+            <p class="expiring-note">Within the next 14 days</p>
+            <button class="btn btn-sm btn-secondary" onclick="navigateTo('/clients')">View Clients</button>
+        </div>
+    `;
+}
+
+function renderNotificationsAndInsights(stats, clients, limit = null) {
+    const items = getAllNotifications(stats, clients);
+
+    // Empty State
+    if (items.length === 0) {
+        return `
+            <div class="insight-card success">
+                <span class="insight-icon">🎉</span>
+                <div class="insight-content">
+                    <h4>All Caught Up</h4>
+                    <p>No immediate alerts or insights. Great job!</p>
+                </div>
+            </div>
+        `;
+    }
+
+    const displayItems = limit ? items.slice(0, limit) : items;
+    const hasMore = limit && items.length > limit;
+
+    let html = displayItems.map(item => renderNotificationItem(item)).join('');
+
+    if (hasMore) {
+        html += `
+            <div class="show-more-container">
+                <button class="btn btn-secondary btn-sm" onclick="openNotificationsModal()">
+                    Show All (${items.length})
+                </button>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+function getAllNotifications(stats, clients) {
+    const items = [];
+
+    // 1. Critical Alerts (High Priority)
+
+    // Low Health
+    const lowHealth = clients.filter(c => c.healthScore < 40);
+    if (lowHealth.length > 0) {
+        items.push({
+            type: 'danger',
+            icon: '❤️',
+            title: `${lowHealth.length} Clients Need Attention`,
+            message: 'Health score below 40. Immediate action recommended.',
+            actionLabel: 'View Clients',
+            actionFn: "navigateTo('/clients')"
+        });
+    }
+
+    // At Risk
+    if (stats.atRisk > 0) {
+        items.push({
             type: 'warning',
-            title: 'Botox Revenue Opportunity',
-            message: 'Botox clients have 3x higher LTV. Consider promoting Botox packages to your HydraFacial clients.'
-        },
-        {
-            type: 'info',
-            title: 'Referral Growth',
-            message: '35% of new clients come from referrals. Launching a referral rewards program could boost this further.'
-        }
-    ];
+            icon: '⚠️',
+            title: `${stats.atRisk} Clients at High Risk`,
+            message: 'High churn probability. Consider personal outreach.',
+            actionLabel: 'Send Nudge',
+            actionFn: "showToast('🚀 AI Nudge campaign started for at-risk clients', 'success')"
+        });
+    }
 
-    return insights.map(insight => `
-        <div class="insight-card ${insight.type}">
-            <div class="insight-header">
-                <span class="insight-icon">${insight.type === 'success' ? '✅' : insight.type === 'warning' ? '⚠️' : '💡'}</span>
-                <span class="insight-title">${insight.title}</span>
+    // 2. Operational / Timely
+
+    // Expiring Soon
+    if (stats.expiringSoon > 0) {
+        items.push({
+            type: 'info',
+            icon: '📅',
+            title: `${stats.expiringSoon} Renewals Due`,
+            message: 'Memberships expiring within 14 days.',
+            actionLabel: 'Send Reminder',
+            actionFn: "showToast('✉️ Renewal reminders queued for sending', 'success')"
+        });
+    }
+
+    // 3. AI Opportunities
+
+    // Membership Opportunity
+    if (stats.none > stats.vip + stats.premium) {
+        items.push({
+            type: 'opportunity',
+            icon: '💡',
+            title: 'Membership Opportunity',
+            message: 'Majority of clients have no membership.',
+            actionLabel: 'Create Offer',
+            actionFn: "showToast('✨ Membership conversion offer created', 'success')"
+        });
+    }
+
+    // Strong Retention
+    if (stats.healthyPercent >= 60) {
+        items.push({
+            type: 'success',
+            icon: '✅',
+            title: 'Strong Retention',
+            message: `${stats.healthyPercent}% of clients are healthy.`,
+            actionLabel: 'View Report',
+            actionFn: "showToast('📊 Retention report generated', 'info')"
+        });
+    }
+
+    return items;
+}
+
+function renderNotificationItem(item) {
+    return `
+        <div class="insight-card ${item.type}">
+            <span class="insight-icon">${item.icon}</span>
+            <div class="insight-content">
+                <div class="insight-header">
+                    <h4>${item.title}</h4>
+                    <span class="insight-time">Today</span>
+                </div>
+                <p>${item.message}</p>
+                ${item.actionLabel ? `
+                    <button class="btn btn-sm btn-outline insight-action-btn" onclick="${item.actionFn}">
+                        ${item.actionLabel}
+                    </button>
+                ` : ''}
             </div>
-            <p class="insight-message">${insight.message}</p>
         </div>
-    `).join('');
+    `;
+}
+
+function openNotificationsModal() {
+    // Get data again (or cache it, but getting fresh is safer for display)
+    const clients = typeof ClientDataService !== 'undefined' ? ClientDataService.getAll() : [];
+    const stats = calculateAnalyticsStats(clients);
+    const allItems = getAllNotifications(stats, clients);
+
+    const modalHtml = `
+        <div class="modal" id="notifications-modal">
+            <div class="modal-backdrop" onclick="closeNotificationsModal()"></div>
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h3>Notifications & Insights</h3>
+                    <button class="modal-close" onclick="closeNotificationsModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="insights-cards">
+                        ${allItems.map(item => renderNotificationItem(item)).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing if any
+    const existing = document.getElementById('notifications-modal');
+    if (existing) existing.remove();
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeNotificationsModal() {
+    const modal = document.getElementById('notifications-modal');
+    if (modal) modal.remove();
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
 }
 
 function updateAnalyticsTimeframe(timeframe) {
-    console.log('Updating analytics to:', timeframe);
     showToast(`Updated to ${timeframe.toUpperCase()} view`, 'info');
 }
 
@@ -376,3 +571,5 @@ function exportAnalyticsReport() {
         showToast('✅ Report ready for download!', 'success');
     }, 1500);
 }
+
+

@@ -2,20 +2,41 @@
 // METRIC CARD COMPONENT
 // ===========================================
 
+function formatCurrency(value) {
+    if (value == null || isNaN(value)) return '$0';
+    return '$' + value.toLocaleString();
+}
+
 function createMetricCard(config) {
-    const { label, value, prefix = '', suffix = '', change, trend, icon, color } = config;
+    // Safely destructure with defaults
+    const label = config.label || 'Metric';
+    const value = config.value != null ? config.value : 0;
+    const prefix = config.prefix || '';
+    const suffix = config.suffix || '';
+    const change = config.change != null ? config.change : 0;
+    const trend = config.trend || 'neutral';
+    const icon = config.icon || '';
+    const color = config.color || 'blue';
 
-    const formattedValue = typeof value === 'number' && !prefix && !suffix
-        ? value.toLocaleString()
-        : value;
-
-    const displayValue = prefix === '$'
-        ? formatCurrency(value).replace('$', '')
-        : formattedValue;
+    // Format the value for display
+    const formattedValue = typeof value === 'number' ? value.toLocaleString() : String(value);
+    const displayValue = `${prefix}${formattedValue}${suffix}`;
 
     const trendIcon = trend === 'positive'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>';
+        : trend === 'negative'
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>';
+
+    // Don't show change if it's 0
+    const changeDisplay = change !== 0
+        ? `<div class="metric-trend ${trend}">
+               ${trendIcon}
+               <span>${Math.abs(change)}%</span>
+           </div>`
+        : `<div class="metric-trend neutral">
+               <span class="no-change">—</span>
+           </div>`;
 
     return `
         <div class="metric-card">
@@ -24,11 +45,8 @@ function createMetricCard(config) {
             </div>
             <div class="metric-content">
                 <div class="metric-label">${label}</div>
-                <div class="metric-value">${prefix}${displayValue}${suffix}</div>
-                <div class="metric-trend ${trend}">
-                    ${trendIcon}
-                    <span>${Math.abs(change)}%</span>
-                </div>
+                <div class="metric-value">${displayValue}</div>
+                ${changeDisplay}
             </div>
         </div>
     `;
@@ -72,12 +90,15 @@ function createMetricFromData(key, data) {
     const config = METRIC_CONFIGS[key];
     if (!config) return '';
 
+    // Handle case where data might be undefined
+    const safeData = data || { value: 0, change: 0, trend: 'neutral' };
+
     return createMetricCard({
         ...config,
-        value: data.value,
-        prefix: data.prefix || '',
-        suffix: data.suffix || '',
-        change: data.change,
-        trend: data.trend
+        value: safeData.value != null ? safeData.value : 0,
+        prefix: safeData.prefix || '',
+        suffix: safeData.suffix || '',
+        change: safeData.change != null ? safeData.change : 0,
+        trend: safeData.trend || 'neutral'
     });
 }

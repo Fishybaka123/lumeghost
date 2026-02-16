@@ -11,8 +11,8 @@ const routes = {
     '/communications': renderCommunicationsPage,
     '/analytics': renderAnalyticsPage,
     '/leads': renderPlaceholderPage.bind(null, 'Leads', 'Track and convert new leads'),
-    '/operations': renderPlaceholderPage.bind(null, 'Operations', 'Manage treatments, staff, and inventory'),
-    '/settings': renderPlaceholderPage.bind(null, 'Settings', 'Configure your Lume preferences')
+    '/operations': renderOperationsPage,
+    '/settings': renderSettingsPage
 };
 
 function navigateTo(path) {
@@ -86,6 +86,10 @@ function router() {
             app.innerHTML = matched.handler(matched.params.id);
         } else {
             app.innerHTML = matched.handler();
+        }
+        // Track navigation for back button
+        if (typeof trackNavigation === 'function') {
+            trackNavigation(path);
         }
     } else {
         app.innerHTML = renderNotFoundPage('Page not found');

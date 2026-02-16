@@ -1,0 +1,970 @@
+/* ===========================================
+   TOP NAVIGATION LAYOUT STYLES
+   Professional Dark Navy Theme
+   Inspired by Reference Design
+   =========================================== */
+
+/* ===========================================
+   DARK NAVY COLOR PALETTE OVERRIDE
+   =========================================== */
+
+:root {
+    /* Dark Navy Theme Colors */
+    --nav-bg-primary: #0F1629;
+    --nav-bg-secondary: #1A1F36;
+    --nav-bg-tertiary: #252B42;
+    --nav-surface: #1E2438;
+    --nav-surface-hover: #2A3152;
+
+    /* Accent Colors */
+    --nav-accent: #4F7DF3;
+    --nav-accent-light: #6B93F7;
+    --nav-accent-glow: rgba(79, 125, 243, 0.3);
+
+    /* Text Colors */
+    --nav-text-primary: #FFFFFF;
+    --nav-text-secondary: rgba(255, 255, 255, 0.7);
+    --nav-text-muted: rgba(255, 255, 255, 0.5);
+
+    /* Border & Effects */
+    --nav-border: rgba(255, 255, 255, 0.1);
+    --nav-border-active: rgba(79, 125, 243, 0.5);
+    --nav-glass: rgba(255, 255, 255, 0.05);
+    --nav-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+
+    /* Gradient Background */
+    --nav-gradient: linear-gradient(135deg, #0F1629 0%, #1A2744 50%, #1E2438 100%);
+    --nav-gradient-soft: linear-gradient(180deg, rgba(79, 125, 243, 0.1) 0%, transparent 100%);
+}
+
+/* ===========================================
+   TOP NAVIGATION BAR
+   =========================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: var(--nav-bg-primary);
+    background-image: var(--nav-gradient);
+    border-bottom: 1px solid var(--nav-border);
+    box-shadow: var(--nav-shadow);
+    z-index: var(--z-header, 300);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* ===========================================
+   LEFT SECTION: HAMBURGER + LOGO
+   =========================================== */
+
+.top-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hamburger-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--nav-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.hamburger-btn:hover {
+    background: var(--nav-glass);
+    color: var(--nav-text-primary);
+}
+
+.hamburger-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+@media (max-width: 1024px) {
+    .hamburger-btn {
+        display: flex;
+    }
+}
+
+.top-nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--nav-text-primary);
+    transition: opacity 0.2s ease;
+}
+
+.top-nav-logo:hover {
+    opacity: 0.8;
+}
+
+.top-nav-logo svg {
+    width: 28px;
+    height: 28px;
+    color: var(--nav-accent);
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--nav-text-primary);
+}
+
+/* ===========================================
+   CENTER SECTION: MAIN NAVIGATION
+   =========================================== */
+
+.top-nav-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 1024px) {
+    .top-nav-center {
+        display: none;
+    }
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-decoration: none;
+    color: var(--nav-text-secondary);
+    background: transparent;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: var(--nav-text-primary);
+    background: var(--nav-glass);
+}
+
+.nav-link.active {
+    color: var(--nav-text-primary);
+    background: var(--nav-surface-hover);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background: var(--nav-accent);
+    border-radius: 1px;
+    box-shadow: 0 0 10px var(--nav-accent-glow);
+}
+
+/* ===========================================
+   RIGHT SECTION: ACTIONS + USER
+   =========================================== */
+
+.top-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--nav-text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.nav-icon-btn:hover {
+    background: var(--nav-glass);
+    color: var(--nav-text-primary);
+}
+
+.nav-icon-btn.active {
+    color: var(--nav-accent);
+}
+
+.nav-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    background: #EF4444;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-avatar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--nav-accent) 0%, #6B93F7 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.user-avatar-btn:hover .user-avatar {
+    border-color: var(--nav-accent);
+    box-shadow: 0 0 15px var(--nav-accent-glow);
+}
+
+/* ===========================================
+   MOBILE MENU OVERLAY & PANEL
+   =========================================== */
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-open .mobile-menu-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--nav-bg-secondary);
+    background-image: var(--nav-gradient);
+    border-right: 1px solid var(--nav-border);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-open .mobile-menu {
+    transform: translateX(0);
+}
+
+.mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px;
+    border-bottom: 1px solid var(--nav-border);
+}
+
+.mobile-menu-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--nav-text-primary);
+}
+
+.mobile-menu-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--nav-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-close:hover {
+    background: var(--nav-glass);
+    color: var(--nav-text-primary);
+}
+
+.mobile-menu-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.mobile-nav-links {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+}
+
+.mobile-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--nav-text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+
+.mobile-nav-link:hover {
+    background: var(--nav-glass);
+    color: var(--nav-text-primary);
+}
+
+.mobile-nav-link.active {
+    background: var(--nav-surface-hover);
+    color: var(--nav-text-primary);
+}
+
+.mobile-nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 24px;
+    background: var(--nav-accent);
+    border-radius: 0 2px 2px 0;
+}
+
+.mobile-nav-link svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.mobile-menu-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--nav-border);
+}
+
+.mobile-menu-footer .btn {
+    width: 100%;
+    justify-content: center;
+    color: var(--nav-text-secondary);
+}
+
+.mobile-menu-footer .btn:hover {
+    color: var(--nav-text-primary);
+}
+
+/* ===========================================
+   APP LAYOUT WITH TOP NAV
+   =========================================== */
+
+.app-layout-topnav {
+    min-height: 100vh;
+    background: var(--nav-bg-primary);
+    background-image: var(--nav-gradient);
+}
+
+.app-layout-topnav .main-content {
+    margin-left: 0;
+    padding-top: 70px;
+    min-height: 100vh;
+}
+
+.app-layout-topnav .page-content {
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .app-layout-topnav .page-content {
+        padding: 20px 16px;
+    }
+}
+
+/* ===========================================
+   CONTENT CARDS (GLASSMORPHISM)
+   =========================================== */
+
+.app-layout-topnav .card,
+.app-layout-topnav .profile-section,
+.app-layout-topnav .metric-card,
+.app-layout-topnav .chart-container {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.app-layout-topnav .card:hover {
+    border-color: var(--nav-border-active);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* ===========================================
+   METRIC CARDS IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav .metric-card {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .metric-card:hover {
+    border-color: var(--nav-border-active);
+    transform: translateY(-2px);
+}
+
+.app-layout-topnav .metric-label {
+    color: var(--nav-text-secondary);
+}
+
+.app-layout-topnav .metric-value {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .metric-trend {
+    color: var(--nav-text-muted);
+}
+
+.app-layout-topnav .metric-trend.positive {
+    color: #10B981;
+}
+
+.app-layout-topnav .metric-trend.negative {
+    color: #EF4444;
+}
+
+.app-layout-topnav .no-change {
+    color: var(--nav-text-muted);
+}
+
+/* Page Header Text */
+.app-layout-topnav .page-title-section h1 {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .page-title-section p {
+    color: var(--nav-text-secondary);
+}
+
+/* Quick View Section */
+.app-layout-topnav .quick-view-section {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.app-layout-topnav .quick-view-title {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .empty-table-message {
+    color: var(--nav-text-secondary);
+}
+
+/* ===========================================
+   TEXT COLORS FOR DARK THEME
+   =========================================== */
+
+.app-layout-topnav {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav h1,
+.app-layout-topnav h2,
+.app-layout-topnav h3,
+.app-layout-topnav h4,
+.app-layout-topnav .page-title,
+.app-layout-topnav .card-title,
+.app-layout-topnav .section-title {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav p,
+.app-layout-topnav .text-secondary,
+.app-layout-topnav .profile-meta-item {
+    color: var(--nav-text-secondary);
+}
+
+.app-layout-topnav .text-muted,
+.app-layout-topnav .caption {
+    color: var(--nav-text-muted);
+}
+
+/* ===========================================
+   BUTTONS IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav .btn-primary {
+    background: linear-gradient(135deg, var(--nav-accent) 0%, #6B93F7 100%);
+    border: none;
+    color: white;
+}
+
+.app-layout-topnav .btn-primary:hover {
+    background: linear-gradient(135deg, #6B93F7 0%, var(--nav-accent) 100%);
+    box-shadow: 0 4px 20px var(--nav-accent-glow);
+}
+
+.app-layout-topnav .btn-secondary {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .btn-secondary:hover {
+    border-color: var(--nav-accent);
+    background: var(--nav-surface-hover);
+}
+
+/* ===========================================
+   FORM INPUTS IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav .input,
+.app-layout-topnav input[type="text"],
+.app-layout-topnav input[type="email"],
+.app-layout-topnav input[type="password"],
+.app-layout-topnav select,
+.app-layout-topnav textarea {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav .input:focus,
+.app-layout-topnav input:focus,
+.app-layout-topnav select:focus,
+.app-layout-topnav textarea:focus {
+    border-color: var(--nav-accent);
+    box-shadow: 0 0 0 3px var(--nav-accent-glow);
+}
+
+.app-layout-topnav .input::placeholder {
+    color: var(--nav-text-muted);
+}
+
+/* ===========================================
+   TABLES IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav table {
+    background: var(--nav-surface);
+}
+
+.app-layout-topnav th {
+    background: var(--nav-bg-tertiary);
+    color: var(--nav-text-primary);
+    border-bottom: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav td {
+    color: var(--nav-text-secondary);
+    border-bottom: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav tr:hover {
+    background: var(--nav-surface-hover);
+}
+
+/* ===========================================
+   BADGES IN DARK THEME
+   =========================================== */
+
+.app-layout-topnav .badge,
+.app-layout-topnav .membership-badge,
+.app-layout-topnav .churn-badge {
+    border: 1px solid var(--nav-border);
+}
+
+/* ===========================================
+   SCROLLBAR STYLING
+   =========================================== */
+
+.app-layout-topnav ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.app-layout-topnav ::-webkit-scrollbar-track {
+    background: var(--nav-bg-tertiary);
+}
+
+.app-layout-topnav ::-webkit-scrollbar-thumb {
+    background: var(--nav-surface-hover);
+    border-radius: 4px;
+}
+
+.app-layout-topnav ::-webkit-scrollbar-thumb:hover {
+    background: var(--nav-accent);
+}
+
+/* ===========================================
+   RESPONSIVE ADJUSTMENTS
+   =========================================== */
+
+@media (max-width: 768px) {
+    .top-nav {
+        padding: 0 16px;
+        height: 60px;
+    }
+
+    .logo-text {
+        font-size: 16px;
+    }
+
+    .top-nav-logo svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .nav-icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .app-layout-topnav .main-content {
+        padding-top: 60px;
+    }
+}
+
+/* ===========================================
+   DARK THEME OVERRIDES FOR ALL PAGES
+   Properly handles cards with dark backgrounds
+   =========================================== */
+
+/* ===========================================
+   Analytics Page Overrides
+   =========================================== */
+
+.app-layout-topnav .analytics-metric,
+.app-layout-topnav .analytics-card,
+.app-layout-topnav .analytics-empty-state {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .analytics-metric .metric-value,
+.app-layout-topnav .analytics-card h3,
+.app-layout-topnav .section-header h2 {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .analytics-metric .metric-label,
+.app-layout-topnav .analytics-metric .metric-subtitle,
+.app-layout-topnav .section-header p,
+.app-layout-topnav .health-bar-label {
+    color: var(--nav-text-secondary) !important;
+}
+
+.app-layout-topnav .analytics-empty-state h2 {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .analytics-empty-state p {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* Churn gauge text */
+.app-layout-topnav .gauge-label,
+.app-layout-topnav .gauge-value {
+    color: var(--nav-text-primary) !important;
+}
+
+/* Retention cards */
+.app-layout-topnav .retention-stat,
+.app-layout-topnav .retention-card {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .retention-stat h4,
+.app-layout-topnav .retention-stat .value {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .retention-stat p {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Clients Page Overrides
+   =========================================== */
+
+.app-layout-topnav .clients-table,
+.app-layout-topnav .table-container {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.app-layout-topnav .client-name {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .client-email {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Communications Page Overrides
+   =========================================== */
+
+.app-layout-topnav .message-card,
+.app-layout-topnav .communication-card,
+.app-layout-topnav .email-preview {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .message-content,
+.app-layout-topnav .message-subject {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .message-meta,
+.app-layout-topnav .message-time {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Settings Page Overrides
+   =========================================== */
+
+.app-layout-topnav .settings-card,
+.app-layout-topnav .settings-section,
+.app-layout-topnav .setting-item {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .settings-nav-item {
+    color: var(--nav-text-secondary);
+}
+
+.app-layout-topnav .settings-nav-item.active,
+.app-layout-topnav .settings-nav-item:hover {
+    color: var(--nav-text-primary);
+    background: var(--nav-surface-hover);
+}
+
+.app-layout-topnav .settings-section-title,
+.app-layout-topnav .setting-title {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .settings-description,
+.app-layout-topnav .setting-description {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Operations Page Overrides
+   =========================================== */
+
+.app-layout-topnav .operations-card,
+.app-layout-topnav .nudge-card,
+.app-layout-topnav .campaign-card,
+.app-layout-topnav .insight-card {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .operations-title,
+.app-layout-topnav .nudge-title,
+.app-layout-topnav .campaign-title,
+.app-layout-topnav .insight-title {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .operations-description,
+.app-layout-topnav .nudge-description,
+.app-layout-topnav .campaign-description,
+.app-layout-topnav .insight-description {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Dashboard Page Overrides
+   =========================================== */
+
+.app-layout-topnav .metric-card {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .metric-label {
+    color: var(--nav-text-secondary) !important;
+}
+
+.app-layout-topnav .metric-value {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .quick-view-section {
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.app-layout-topnav .quick-view-title {
+    color: var(--nav-text-primary) !important;
+}
+
+/* ===========================================
+   Global Card Overrides
+   =========================================== */
+
+/* Any card with white background */
+.app-layout-topnav .card,
+.app-layout-topnav [class*="-card"],
+.app-layout-topnav .profile-section {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+/* Empty states */
+.app-layout-topnav .empty-state-card,
+.app-layout-topnav .empty-state {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+}
+
+.app-layout-topnav .empty-state-card h3,
+.app-layout-topnav .empty-state h3 {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .empty-state-card p,
+.app-layout-topnav .empty-state p {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   Form Elements
+   =========================================== */
+
+.app-layout-topnav .filter-select,
+.app-layout-topnav select {
+    background: var(--nav-surface) !important;
+    border: 1px solid var(--nav-border);
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .filter-select option {
+    background: var(--nav-bg-secondary);
+    color: var(--nav-text-primary);
+}
+
+/* ===========================================
+   Page Header
+   =========================================== */
+
+.app-layout-topnav .page-title-section h1 {
+    color: var(--nav-text-primary) !important;
+}
+
+.app-layout-topnav .page-title-section p {
+    color: var(--nav-text-secondary) !important;
+}
+
+/* ===========================================
+   General Text Overrides
+   =========================================== */
+
+.app-layout-topnav h1,
+.app-layout-topnav h2,
+.app-layout-topnav h3,
+.app-layout-topnav h4,
+.app-layout-topnav h5,
+.app-layout-topnav h6 {
+    color: var(--nav-text-primary);
+}
+
+.app-layout-topnav p,
+.app-layout-topnav span,
+.app-layout-topnav label {
+    color: var(--nav-text-secondary);
+}
+
+/* Override text-muted and secondary text */
+.app-layout-topnav .text-muted,
+.app-layout-topnav .text-secondary,
+.app-layout-topnav .caption,
+.app-layout-topnav .subtitle {
+    color: var(--nav-text-muted) !important;
+}
+
+/* Table styling */
+.app-layout-topnav .empty-table-message {
+    color: var(--nav-text-secondary) !important;
+}
