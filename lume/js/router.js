@@ -19,6 +19,11 @@ window.navigateTo = function (path) {
     window.location.hash = path;
 };
 
+window.navigateWithFilter = function (path, filterConfig) {
+    sessionStorage.setItem('lume_nav_filter', JSON.stringify(filterConfig));
+    window.navigateTo(path);
+};
+
 function getRoute() {
     const hash = window.location.hash.slice(1) || '/';
     return hash;

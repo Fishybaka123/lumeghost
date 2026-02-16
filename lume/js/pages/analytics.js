@@ -459,28 +459,28 @@ function getAllNotifications(stats, clients) {
 
     // 1. Critical Alerts (High Priority)
 
-    // Low Health
-    const lowHealth = clients.filter(c => c.healthScore < 40);
-    if (lowHealth.length > 0) {
+    // High Risk Clients
+    if (stats.atRisk > 0) {
         items.push({
             type: 'danger',
-            icon: '❤️',
-            title: `${lowHealth.length} Clients Need Attention`,
-            message: 'Health score below 40. Immediate action recommended.',
-            actionLabel: 'View Clients',
-            actionFn: "navigateTo('/clients')"
+            icon: '⚠️',
+            title: `${stats.atRisk} High Risk Clients`,
+            message: 'These clients have a high probability of churning. Review their profiles.',
+            actionLabel: 'View High Risk',
+            actionFn: "navigateWithFilter('/clients', { type: 'risk', message: 'Showing At-Risk Clients' })"
         });
     }
 
-    // At Risk
-    if (stats.atRisk > 0) {
+    // Low Health
+    const lowHealth = clients.filter(c => c.healthScore < 50);
+    if (lowHealth.length > 0) {
         items.push({
             type: 'warning',
-            icon: '⚠️',
-            title: `${stats.atRisk} Clients at High Risk`,
-            message: 'High churn probability. Consider personal outreach.',
-            actionLabel: 'Send Nudge',
-            actionFn: "showToast('🚀 AI Nudge campaign started for at-risk clients', 'success')"
+            icon: '❤️',
+            title: `${lowHealth.length} Health Alerts`,
+            message: 'Clients with health scores below 50 need attention.',
+            actionLabel: 'View Low Health',
+            actionFn: "navigateWithFilter('/clients', { type: 'health', value: 'attention', message: 'Showing Clients Needing Attention' })"
         });
     }
 
@@ -493,34 +493,67 @@ function getAllNotifications(stats, clients) {
             icon: '📅',
             title: `${stats.expiringSoon} Renewals Due`,
             message: 'Memberships expiring within 14 days.',
-            actionLabel: 'Send Reminder',
-            actionFn: "showToast('✉️ Renewal reminders queued for sending', 'success')"
+            actionLabel: 'View Expiring',
+            actionFn: "navigateWithFilter('/clients', { type: 'expiring', message: 'Showing Expiring Managers' })"
         });
     }
 
-    // 3. AI Opportunities
+    // Low Sessions
+    if (stats.lowSessions > 0) {
+        items.push({
+            type: 'warning',
+            icon: '📉',
+            title: `${stats.lowSessions} Low Sessions`,
+            message: 'Clients with 2 or fewer sessions remaining.',
+            actionLabel: 'View Clients',
+            actionFn: "navigateWithFilter('/clients', { type: 'expiring', message: 'Clients with low sessions often fall into expiring filter' })" // Mapping to expiring or we'd need a specific filter
+        });
+    }
 
-    // Membership Opportunity
-    if (stats.none > stats.vip + stats.premium) {
+    // 3. Growth & Opportunities
+
+    // Win-back Opportunity (No visit > 90 days)
+    const winback = clients.filter(c => {
+        if (!c.lastVisit) return false;
+        const days = Math.floor((new Date() - new Date(c.lastVisit)) / (1000 * 60 * 60 * 24));
+        return days > 90;
+    });
+
+    if (winback.length > 0) {
         items.push({
             type: 'opportunity',
-            icon: '💡',
-            title: 'Membership Opportunity',
-            message: 'Majority of clients have no membership.',
-            actionLabel: 'Create Offer',
-            actionFn: "showToast('✨ Membership conversion offer created', 'success')"
+            icon: '👋',
+            title: `${winback.length} Win-back Targets`,
+            message: 'Clients who haven\'t visited in 90+ days.',
+            actionLabel: 'View Inactive',
+            actionFn: "navigateWithFilter('/clients', { type: 'winback', message: 'Showing clients inactive for 90+ days' })"
         });
     }
 
+    // Missing Contact Info
+    const missingInfo = clients.filter(c => !c.email && !c.phone).length;
+    if (missingInfo > 0) {
+        items.push({
+            type: 'info',
+            icon: '📝',
+            title: `${missingInfo} Incomplete Profiles`,
+            message: 'Clients missing both email and phone number.',
+            actionLabel: 'Fix Profiles',
+            actionFn: "navigateWithFilter('/clients', { type: 'missing-info', message: 'Showing clients with missing contact info' })"
+        });
+    }
+
+    // 4. Successes
+
     // Strong Retention
-    if (stats.healthyPercent >= 60) {
+    if (stats.healthyPercent >= 70) {
         items.push({
             type: 'success',
             icon: '✅',
             title: 'Strong Retention',
-            message: `${stats.healthyPercent}% of clients are healthy.`,
-            actionLabel: 'View Report',
-            actionFn: "showToast('📊 Retention report generated', 'info')"
+            message: `${stats.healthyPercent}% of your client base is healthy!`,
+            actionLabel: 'View Healthy',
+            actionFn: "navigateWithFilter('/clients', { type: 'health', value: 'healthy', message: 'Showing Healthy Clients' })"
         });
     }
 

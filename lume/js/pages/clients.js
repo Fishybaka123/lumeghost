@@ -206,6 +206,47 @@ function renderClientsPage() {
         sortedClients = clients;
     }
 
+    // Check for pending filter from deep link
+    const pendingFilter = sessionStorage.getItem('lume_nav_filter');
+    if (pendingFilter) {
+        try {
+            const filterConfig = JSON.parse(pendingFilter);
+            sessionStorage.removeItem('lume_nav_filter'); // Clear it
+
+            // We'll apply this logic after render
+            setTimeout(() => {
+                if (filterConfig.type === 'risk') {
+                    // Find button for 'at-risk' and click it
+                    const btn = document.querySelector('button[onclick*="at-risk"]');
+                    if (btn) btn.click();
+                } else if (filterConfig.type === 'health' && filterConfig.value === 'attention') {
+                    const btn = document.querySelector('button[onclick*="attention"]');
+                    if (btn) btn.click();
+                } else if (filterConfig.type === 'expiring') {
+                    const btn = document.querySelector('button[onclick*="expiring"]');
+                    if (btn) btn.click();
+                } else if (filterConfig.type === 'winback') {
+                    // No button, set directly
+                    setClientFilter('winback', { classList: { add: () => { } } }); // Mock button object
+                } else if (filterConfig.type === 'missing-info') {
+                    setClientFilter('missing-info', { classList: { add: () => { } } });
+                } else if (filterConfig.type === 'search') {
+                    const input = document.getElementById('clients-page-search');
+                    if (input) {
+                        input.value = filterConfig.value;
+                        clientsPageSearch(filterConfig.value);
+                    }
+                }
+
+                if (filterConfig.message) {
+                    showToast(filterConfig.message, 'info');
+                }
+            }, 100);
+        } catch (e) {
+            console.error('Error applying pending filter', e);
+        }
+    }
+
     return `
         <div class="app-layout-topnav clients-page">
             ${createTopNav('clients')}
@@ -592,6 +633,16 @@ function setClientFilter(filter, button) {
                 const days = Math.ceil((new Date(c.expireDate) - new Date()) / (1000 * 60 * 60 * 24));
                 return days <= 0;
             });
+            break;
+        case 'winback':
+            filtered = clients.filter(c => {
+                if (!c.lastVisit) return false;
+                const days = Math.floor((new Date() - new Date(c.lastVisit)) / (1000 * 60 * 60 * 24));
+                return days > 90;
+            });
+            break;
+        case 'missing-info':
+            filtered = clients.filter(c => !c.email && !c.phone);
             break;
     }
 
