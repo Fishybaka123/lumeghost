@@ -234,6 +234,22 @@ const CommunicationService = {
     getRecent(limit = 15) { return this.messages.slice(0, limit); },
     getByClient(id) { return this.messages.filter(m => m.clientId == id); },
 
+    /**
+     * Get statistics
+     */
+    getStats() {
+        const messages = this.messages;
+        return {
+            total: messages.length,
+            sms: messages.filter(m => m.type === this.TYPES.SMS || m.channel === 'sms').length,
+            email: messages.filter(m => m.type === this.TYPES.EMAIL || m.channel === 'email').length,
+            nudges: messages.filter(m => m.type === this.TYPES.NUDGE).length,
+            notes: messages.filter(m => m.type === this.TYPES.NOTE).length,
+            calls: messages.filter(m => m.type === this.TYPES.CALL).length,
+            unread: messages.filter(m => !m.read).length
+        };
+    },
+
     // Fallback for local storage (optional, if you want to keep it)
     loadFromStorage() {
         // ... (legacy implementation if needed, otherwise removed)
