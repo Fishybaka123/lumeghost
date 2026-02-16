@@ -23,10 +23,52 @@ function renderCommunicationsPage() {
         ? CommunicationService.getRecent(15)
         : [];
 
+    // Check for pending action (deep link)
+    setTimeout(() => {
+        const pending = sessionStorage.getItem('lume_nav_filter');
+        if (pending) {
+            try {
+                const config = JSON.parse(pending);
+                sessionStorage.removeItem('lume_nav_filter');
+
+                if (config.type === 'nudge') {
+                    // Open modal
+                    openNewMessageModal();
+
+                    // Handle recipients
+                    if (config.clients === 'at-risk' && typeof ClientDataService !== 'undefined') {
+                        const allClients = ClientDataService.getAll();
+                        // Filter for high risk or low health
+                        const targets = allClients.filter(c => (c.churnRisk >= 40 || c.healthScore < 50));
+
+                        targets.forEach(c => {
+                            selectedMessageClients.add(String(c.id));
+                            // Also check the box if visible
+                            const cb = document.querySelector(`input[value="${c.id}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                        updateSelectedTags();
+                        updateSelectedCount();
+                    }
+
+                    // Handle content
+                    if (config.messageTemplate) {
+                        const txt = document.getElementById('new-msg-content');
+                        if (txt) txt.value = config.messageTemplate;
+                    }
+
+                    showToast('🎯 Prepared nudge for at-risk clients', 'success');
+                }
+            } catch (e) {
+                console.error('Error processing deep link:', e);
+            }
+        }
+    }, 600);
+
     return `
         <div class="app-layout-topnav communications-page">
             ${createTopNav('communications')}
-            
+
             <main class="main-content" id="main-content">
                 <div class="page-content">
                     <div class="page-header">

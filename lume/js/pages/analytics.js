@@ -465,9 +465,9 @@ function getAllNotifications(stats, clients) {
             type: 'danger',
             icon: '⚠️',
             title: `${stats.atRisk} High Risk Clients`,
-            message: 'These clients have a high probability of churning. Review their profiles.',
-            actionLabel: 'View High Risk',
-            actionFn: "navigateWithFilter('/clients', { type: 'risk', message: 'Showing At-Risk Clients' })"
+            message: 'High churn probability. Consider personal outreach.',
+            actionLabel: 'Send Nudge',
+            actionFn: "navigateWithFilter('/communications', { type: 'nudge', clients: 'at-risk', messageTemplate: 'Hi [Name], we noticed it has been a while! Come in for a complimentary skin consultation this week.' })"
         });
     }
 
@@ -506,7 +506,7 @@ function getAllNotifications(stats, clients) {
             title: `${stats.lowSessions} Low Sessions`,
             message: 'Clients with 2 or fewer sessions remaining.',
             actionLabel: 'View Clients',
-            actionFn: "navigateWithFilter('/clients', { type: 'expiring', message: 'Clients with low sessions often fall into expiring filter' })" // Mapping to expiring or we'd need a specific filter
+            actionFn: "navigateWithFilter('/clients', { type: 'low-sessions', message: 'Showing clients with low sessions' })"
         });
     }
 

@@ -230,6 +230,8 @@ function renderClientsPage() {
                     setClientFilter('winback', { classList: { add: () => { } } }); // Mock button object
                 } else if (filterConfig.type === 'missing-info') {
                     setClientFilter('missing-info', { classList: { add: () => { } } });
+                } else if (filterConfig.type === 'low-sessions') {
+                    setClientFilter('low-sessions', { classList: { add: () => { } } });
                 } else if (filterConfig.type === 'search') {
                     const input = document.getElementById('clients-page-search');
                     if (input) {
@@ -643,6 +645,9 @@ function setClientFilter(filter, button) {
             break;
         case 'missing-info':
             filtered = clients.filter(c => !c.email && !c.phone);
+            break;
+        case 'low-sessions':
+            filtered = clients.filter(c => c.remainingSessions !== undefined && c.remainingSessions <= 2);
             break;
     }
 
