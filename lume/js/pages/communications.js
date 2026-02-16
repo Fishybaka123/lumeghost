@@ -10,12 +10,18 @@ function renderCommunicationsPage() {
     const user = JSON.parse(sessionStorage.getItem('lume_user')) || { name: 'Admin', initials: 'AD' };
 
     // Initialize communication service
-    if (CommunicationService) {
-        // Demo data generation removed per user request (Clear history)
+    if (typeof CommunicationService !== 'undefined' && CommunicationService.init && !CommunicationService.messages.length) {
+        // Silent init if needed
+        CommunicationService.init();
     }
 
-    const stats = CommunicationService ? CommunicationService.getStats() : { total: 0, sms: 0, email: 0, unread: 0 };
-    const recentMessages = CommunicationService ? CommunicationService.getRecent(15) : [];
+    const stats = (typeof CommunicationService !== 'undefined' && typeof CommunicationService.getStats === 'function')
+        ? CommunicationService.getStats()
+        : { total: 0, sms: 0, email: 0, unread: 0 };
+
+    const recentMessages = (typeof CommunicationService !== 'undefined' && typeof CommunicationService.getRecent === 'function')
+        ? CommunicationService.getRecent(15)
+        : [];
 
     return `
         <div class="app-layout-topnav communications-page">
