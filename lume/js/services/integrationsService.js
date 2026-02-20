@@ -256,29 +256,10 @@ const IntegrationsService = {
      * Save Twilio Config
      */
     async saveTwilioConfig(config) {
-        showToast('Validating Twilio credentials...', 'info');
+        showToast('Saving Twilio credentials...', 'info');
 
         try {
-            // Try to verify credentials via backend (optional - may not be deployed)
-            let verified = false;
-            try {
-                const response = await fetch('/.netlify/functions/verify-twilio', {
-                    method: 'POST',
-                    body: JSON.stringify(config)
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    if (!result.success) {
-                        showToast('Verification Failed: ' + result.error, 'error');
-                        return { success: false, error: result.error };
-                    }
-                    verified = true;
-                }
-            } catch (verifyError) {
-                console.warn('Verify endpoint unavailable, saving without verification:', verifyError.message);
-            }
-
+            // Always save first, verify after
             this.connected['twilio'] = {
                 connected: true,
                 connectedAt: new Date().toISOString(),
@@ -287,22 +268,38 @@ const IntegrationsService = {
 
             await this.saveState();
 
-            if (verified) {
-                showToast('✅ Twilio connected & verified!', 'success');
-            } else {
-                showToast('✅ Twilio credentials saved!', 'success');
-            }
-
+            // Close modal immediately so user sees success
             const modal = document.getElementById('twilio-config-modal');
             if (modal) modal.style.display = 'none';
 
-            if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
+            // Try verification in background (non-blocking)
+            try {
+                const response = await fetch('/.netlify/functions/verify-twilio', {
+                    method: 'POST',
+                    body: JSON.stringify(config)
+                });
 
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('✅ Twilio connected & verified!', 'success');
+                    } else {
+                        showToast('⚠️ Credentials saved, but verification warning: ' + result.error, 'warning');
+                    }
+                } else {
+                    showToast('✅ Twilio credentials saved!', 'success');
+                }
+            } catch (verifyError) {
+                console.warn('Verify endpoint unavailable:', verifyError.message);
+                showToast('✅ Twilio credentials saved!', 'success');
+            }
+
+            if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
             return { success: true };
 
         } catch (error) {
             console.error('Save error:', error);
-            showToast('Connection failed: ' + error.message, 'error');
+            showToast('Save failed: ' + error.message, 'error');
             return { success: false, error: error.message };
         }
     },
