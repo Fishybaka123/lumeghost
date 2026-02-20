@@ -527,30 +527,64 @@ function regenerateNudge(clientId) {
     showToast('✓ New message generated', 'success');
 }
 
-function sendNudgeNow(clientId) {
+async function sendNudgeNow(clientId) {
     const textarea = document.getElementById('nudge-message-text');
     const message = textarea ? textarea.value : '';
+    const sendButton = document.querySelector('#nudge-modal .btn-primary');
+
+    if (!message.trim()) {
+        showToast('Please enter a message', 'error');
+        return;
+    }
 
     // Get the nudge data for logging
     const client = ClientDataService ? ClientDataService.getById(clientId) : getClientById(clientId);
     const nudge = NudgeGenerator.generate(client);
 
-    // Log to communication service
-    if (CommunicationService) {
-        CommunicationService.logNudge(clientId, {
-            message: message,
-            subject: nudge.subject,
-            type: nudge.type,
-            channels: nudge.channels,
-            urgency: nudge.urgency
-        });
+    // Show loading state
+    const originalBtnText = sendButton ? sendButton.innerHTML : 'Send Now';
+    if (sendButton) {
+        sendButton.innerHTML = 'Sending...';
+        sendButton.disabled = true;
     }
 
-    // In a real app, this would send via API
-    console.log('Sending nudge to client', clientId, ':', message);
+    try {
+        // Log to communication service
+        let result = null;
+        if (CommunicationService) {
+            result = await CommunicationService.logNudge(clientId, {
+                message: message,
+                subject: nudge.subject,
+                type: nudge.type,
+                channels: nudge.channels,
+                urgency: nudge.urgency
+            });
+        }
 
-    closeNudgeModal();
-    showToast('✓ Nudge sent successfully!', 'success');
+        // Check result
+        if (CommunicationService && !result) {
+            // Logic implies failure if result is undefined (caught in service)
+            // The service already shows a toast, but we should reflect it here
+            if (sendButton) {
+                sendButton.innerHTML = 'Retry';
+                sendButton.disabled = false;
+            }
+            return;
+        }
+
+        console.log('Sending nudge to client', clientId, ':', message);
+
+        closeNudgeModal();
+        showToast('✓ Nudge sent successfully!', 'success');
+
+    } catch (e) {
+        console.error('Send failed:', e);
+        showToast('Error: ' + e.message, 'error');
+        if (sendButton) {
+            sendButton.innerHTML = originalBtnText;
+            sendButton.disabled = false;
+        }
+    }
 }
 
 // Schedule Appointment

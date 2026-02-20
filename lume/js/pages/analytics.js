@@ -571,7 +571,7 @@ function renderNotificationItem(item) {
                 </div>
                 <p>${item.message}</p>
                 ${item.actionLabel ? `
-                    <button class="btn btn-sm btn-outline insight-action-btn" onclick="${item.actionFn}">
+                    <button class="btn btn-sm btn-outline insight-action-btn" onclick="${item.actionFn}; if(typeof closeNotificationsModal === 'function') closeNotificationsModal();">
                         ${item.actionLabel}
                     </button>
                 ` : ''}
@@ -607,13 +607,26 @@ function openNotificationsModal() {
     const existing = document.getElementById('notifications-modal');
     if (existing) existing.remove();
 
+    // Append new
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Animate in
+    setTimeout(() => {
+        document.getElementById('notifications-modal').classList.add('open');
+    }, 10);
 }
 
 function closeNotificationsModal() {
     const modal = document.getElementById('notifications-modal');
-    if (modal) modal.remove();
+    if (modal) {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+    }
 }
+
+// Expose globally
+window.closeNotificationsModal = closeNotificationsModal;
+window.openNotificationsModal = openNotificationsModal;
 
 function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -668,8 +681,8 @@ function exportAnalyticsReport() {
         c.lastVisit ? new Date(c.lastVisit).toLocaleDateString() : 'Never',
         c.daysSinceVisit,
         c.healthScore || 0,
-        `${c.churnRisk || 0}%`,
-        `$${c.totalSpent || 0}`
+        `${c.churnRisk || 0}% `,
+        `$${c.totalSpent || 0} `
     ]);
 
     // Build CSV Content

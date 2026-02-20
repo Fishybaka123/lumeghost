@@ -17,6 +17,8 @@ const AuthService = {
             this._currentUser = session.user;
             await this._fetchUserProfile(session.user.id);
             console.log('✅ User authenticated:', session.user.email);
+            // Signal that auth + profile are fully ready
+            window.dispatchEvent(new CustomEvent('lume:auth:ready', { detail: session.user }));
         }
 
         // Listen for auth changes
@@ -44,14 +46,16 @@ const AuthService = {
             return stored ? JSON.parse(stored) : null;
         }
 
+        const metadata = this._currentUser.user_metadata || {};
+
         // Return normalized user object
         return {
             id: this._currentUser.id,
             email: this._currentUser.email,
-            name: this._currentUser.user_metadata?.full_name || this._currentUser.email.split('@')[0],
-            businessName: this._currentUser.user_metadata?.business_name || 'My Med Spa',
-            initials: this._getInitials(this._currentUser.user_metadata?.full_name || this._currentUser.email),
-            metadata: this._currentUser.user_metadata
+            name: metadata.full_name || this._currentUser.email.split('@')[0],
+            businessName: metadata.business_name || 'My Med Spa',
+            initials: this._getInitials(metadata.full_name || this._currentUser.email),
+            metadata: metadata // Ensure this contains 'settings'
         };
     },
 
@@ -180,19 +184,101 @@ const AuthService = {
 
     // Fetch and cache user profile
     async _fetchUserProfile(userId) {
-        // We don't necessarily need to fetch from 'profiles' table if metadata is enough
-        // But for completeness let's store a normalized object in localStorage
-        const user = {
-            id: userId,
-            email: this._currentUser.email,
-            name: this._currentUser.user_metadata?.full_name,
-            businessName: this._currentUser.user_metadata?.business_name,
-            initials: this._getInitials(this._currentUser.user_metadata?.full_name)
-        };
+        try {
+            // Fetch from 'profiles' table for robust settings storage
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('settings, full_name, business_name')
+                .eq('id', userId)
+                .single();
 
-        localStorage.setItem('lume_user', JSON.stringify(user));
-        sessionStorage.setItem('lume_authenticated', 'true');
-        return user;
+            // Use profile settings if available, otherwise fall back to metadata
+            const profileSettings = profile?.settings || {};
+            const metadataSettings = this._currentUser.user_metadata?.settings || {};
+            const mergedSettings = { ...metadataSettings, ...profileSettings };
+
+            // Update metadata with profile data for consistency
+            const metadata = {
+                ...this._currentUser.user_metadata,
+                full_name: profile?.full_name || this._currentUser.user_metadata?.full_name,
+                business_name: profile?.business_name || this._currentUser.user_metadata?.business_name,
+                settings: mergedSettings
+            };
+
+            const user = {
+                id: userId,
+                email: this._currentUser.email,
+                name: metadata.full_name,
+                businessName: metadata.business_name,
+                initials: this._getInitials(metadata.full_name || this._currentUser.email),
+                metadata: metadata
+            };
+
+            localStorage.setItem('lume_user', JSON.stringify(user));
+            sessionStorage.setItem('lume_authenticated', 'true');
+
+            console.log('✅ Profile loaded from DB:', user.name);
+            return user;
+
+        } catch (e) {
+            console.warn('Profile fetch failed, using session metadata:', e);
+            // Fallback to existing metadata logic
+            const user = {
+                id: userId,
+                email: this._currentUser.email,
+                name: this._currentUser.user_metadata?.full_name,
+                businessName: this._currentUser.user_metadata?.business_name,
+                initials: this._getInitials(this._currentUser.user_metadata?.full_name),
+                metadata: this._currentUser.user_metadata
+            };
+            localStorage.setItem('lume_user', JSON.stringify(user));
+            return user;
+        }
+    },
+
+    // Update User Profile & Settings
+    async updateProfile(name, businessName, settings) {
+        if (!supabase) return { success: false, error: 'Supabase not initialized' };
+
+        try {
+            const userId = this._currentUser.id;
+
+            // 1. Update 'profiles' table (Primary Storage)
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: userId,
+                    full_name: name,
+                    business_name: businessName,
+                    settings: settings,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (dbError) throw dbError;
+
+            // 2. Update Auth Metadata (Secondary/Session Storage)
+            const { data, error: authError } = await supabase.auth.updateUser({
+                data: {
+                    full_name: name,
+                    business_name: businessName,
+                    settings: settings
+                }
+            });
+
+            if (authError) console.warn('Auth metadata update warning:', authError);
+
+            // Update local cache
+            if (data?.user) {
+                this._currentUser = data.user;
+                await this._fetchUserProfile(userId);
+            }
+
+            return { success: true };
+
+        } catch (error) {
+            console.error('Update profile error:', error);
+            return { success: false, error: error.message };
+        }
     },
 
     // Helper: Get initials

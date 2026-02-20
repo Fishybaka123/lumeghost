@@ -242,9 +242,9 @@ function renderSettingsPage() {
                 </div>
                 <div class="modal-body">
                     <p style="margin-bottom: 20px;">Connect your Twilio account.</p>
-                    <div class="form-group"><label>Account SID</label><input type="text" id="twilio-sid" class="input"></div>
-                    <div class="form-group"><label>Auth Token</label><input type="password" id="twilio-token" class="input"></div>
-                    <div class="form-group"><label>Phone Number</label><input type="text" id="twilio-phone" class="input"></div>
+                    <div class="form-group"><label>Account SID</label><input type="text" id="twilio-sid" class="input" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+                    <div class="form-group"><label>Auth Token</label><input type="password" id="twilio-token" class="input" placeholder="Your auth token"></div>
+                    <div class="form-group"><label>Phone Number or Messaging Service SID</label><input type="text" id="twilio-phone" class="input" placeholder="MGxxxxxxxx or +1234567890"></div>
                     <div class="form-actions">
                         <button class="btn btn-secondary" onclick="document.getElementById('twilio-config-modal').style.display='none'">Cancel</button>
                         <button class="btn btn-primary" onclick="handleTwilioSave()">Connect</button>
@@ -286,14 +286,26 @@ window.switchSettingsTab = function (tabName) {
     }
 };
 
-window.handleTwilioSave = function () {
+window.handleTwilioSave = async function () {
     const config = {
-        accountSid: document.getElementById('twilio-sid').value,
-        authToken: document.getElementById('twilio-token').value,
-        phoneNumber: document.getElementById('twilio-phone').value
+        accountSid: document.getElementById('twilio-sid').value.trim(),
+        authToken: document.getElementById('twilio-token').value.trim(),
+        phoneNumber: document.getElementById('twilio-phone').value.trim()
     };
-    if (window.IntegrationsService) window.IntegrationsService.saveTwilioConfig(config);
-    document.getElementById('twilio-config-modal').style.display = 'none';
+
+    if (!config.accountSid || !config.authToken || !config.phoneNumber) {
+        showToast('Please fill in all Twilio fields', 'error');
+        return;
+    }
+
+    if (window.IntegrationsService) {
+        const result = await window.IntegrationsService.saveTwilioConfig(config);
+        // Modal closing is handled inside saveTwilioConfig on success
+        if (!result || !result.success) {
+            console.error('Twilio save failed:', result?.error);
+            // Don't close modal on failure so user can fix inputs
+        }
+    }
 };
 
 // Settings form handlers

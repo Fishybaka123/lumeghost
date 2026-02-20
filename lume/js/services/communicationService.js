@@ -153,10 +153,16 @@ const CommunicationService = {
         if (!window.supabase || !client) return optimisticMessage;
 
         try {
+            // Get session user_id (must match auth.uid() for RLS)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user?.id) {
+                throw new Error('Not authenticated. Please log in again.');
+            }
+
             // 2. Prepare DB Insert
             const dbPayload = {
                 client_id: clientId,
-                user_id: client.userId || (await supabase.auth.getUser()).data.user?.id,
+                user_id: session.user.id,
                 type,
                 direction: 'outbound',
                 content,
@@ -165,23 +171,49 @@ const CommunicationService = {
                 is_read: true
             };
 
-            // 3. Send via Netlify Function if SMS
-            if (type === this.TYPES.SMS) {
+            // 3. Send via Netlify Function if SMS or NUDGE (if SMS channel is appropriate)
+            // For now, we assume all Nudges go to SMS if Twilio is connected
+            const isSms = type === this.TYPES.SMS;
+            const isNudge = type === this.TYPES.NUDGE;
+
+            // Should we send SMS? 
+            // Yes if type is SMS, OR if it's a Nudge and we have a phone number (and metadata doesn't explicitly exclude sms)
+            if (isSms || isNudge) {
+                // Get User credentials
+                let twilioConfig = {};
+                if (window.IntegrationsService && IntegrationsService.connected['twilio']?.config) {
+                    twilioConfig = IntegrationsService.connected['twilio'].config;
+                }
+
+                // Validate: Do we have what we need?
+                if (!twilioConfig.accountSid || !twilioConfig.authToken || !twilioConfig.phoneNumber) {
+                    throw new Error('Twilio is not configured. Go to Settings > Integrations to connect Twilio.');
+                }
+                if (!client.phone) {
+                    throw new Error('This client has no phone number on file.');
+                }
+
+                console.log('[SMS] Sending to:', client.phone, 'from:', twilioConfig.phoneNumber);
+
                 // Call Send SMS Function
                 const response = await fetch('/.netlify/functions/send-sms', {
                     method: 'POST',
                     body: JSON.stringify({
                         to: client.phone,
-                        body: content
+                        body: content,
+                        accountSid: twilioConfig.accountSid,
+                        authToken: twilioConfig.authToken,
+                        fromNumber: twilioConfig.phoneNumber
                     })
                 });
 
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.error);
+                    throw new Error(result.error || 'SMS send failed');
                 }
 
+                console.log('[SMS] ✅ Sent successfully, SID:', result.sid);
                 dbPayload.status = 'sent';
                 dbPayload.sid = result.sid;
             }

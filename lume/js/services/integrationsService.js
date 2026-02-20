@@ -66,6 +66,17 @@ const IntegrationsService = {
             scopes: ['campaigns:read', 'campaigns:write'],
             oauthUrl: 'https://login.mailchimp.com/oauth2/authorize',
             website: 'https://mailchimp.com'
+        },
+        // SMS Providers
+        twilio: {
+            id: 'twilio',
+            name: 'Twilio',
+            type: 'sms',
+            icon: '💬',
+            color: '#F22F46',
+            description: 'Send SMS notifications and nudges',
+            requiresConfig: true,
+            website: 'https://twilio.com'
         }
     },
 
@@ -76,15 +87,41 @@ const IntegrationsService = {
     // INITIALIZATION
     // ===========================================
 
+    // ===========================================
+    // INITIALIZATION
+    // ===========================================
+
     init() {
+        // Listen for auth ready (profile fully loaded from DB)
+        window.addEventListener('lume:auth:ready', () => {
+            console.log('[Integrations] Auth ready, loading state from profile...');
+            this.loadState();
+            if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
+        });
+
+        // Also listen for new logins
+        window.addEventListener('lume:auth:login', () => {
+            console.log('[Integrations] Auth login detected, reloading state...');
+            this.loadState();
+            if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
+        });
+
+        // Try loading immediately from localStorage as fast fallback
         this.loadState();
     },
 
     loadState() {
         try {
-            const stored = localStorage.getItem(this.STORAGE_KEY);
-            if (stored) {
-                this.connected = JSON.parse(stored);
+            // Priority: User Profile -> Local Storage
+            const user = AuthService ? AuthService.getCurrentUser() : null;
+
+            if (user && user.metadata && user.metadata.settings && user.metadata.settings.integrations) {
+                this.connected = user.metadata.settings.integrations;
+            } else {
+                const stored = localStorage.getItem(this.STORAGE_KEY);
+                if (stored) {
+                    this.connected = JSON.parse(stored);
+                }
             }
         } catch (e) {
             console.error('Failed to load integrations state:', e);
@@ -92,8 +129,23 @@ const IntegrationsService = {
         }
     },
 
-    saveState() {
+    async saveState() {
+        // Save to local storage
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.connected));
+
+        // Save to User Profile if authenticated
+        if (AuthService) {
+            const user = AuthService.getCurrentUser();
+            const currentSettings = user.metadata?.settings || {};
+
+            // Merge with existing settings
+            const newSettings = {
+                ...currentSettings,
+                integrations: this.connected
+            };
+
+            await AuthService.updateProfile(user.name, user.businessName, newSettings);
+        }
     },
 
     // ===========================================
@@ -172,7 +224,7 @@ const IntegrationsService = {
             expiresAt: Date.now() + (3600 * 1000) // 1 hour
         };
 
-        this.saveState();
+        await this.saveState();
 
         showToast(`Connected to ${provider.name}!`, 'success');
         if (typeof NotificationCenter !== 'undefined') {
@@ -205,23 +257,54 @@ const IntegrationsService = {
      */
     async saveTwilioConfig(config) {
         showToast('Validating Twilio credentials...', 'info');
-        await this.delay(1000);
 
-        this.connected['twilio'] = {
-            connected: true,
-            connectedAt: new Date().toISOString(),
-            config: config
-        };
+        try {
+            // Try to verify credentials via backend (optional - may not be deployed)
+            let verified = false;
+            try {
+                const response = await fetch('/.netlify/functions/verify-twilio', {
+                    method: 'POST',
+                    body: JSON.stringify(config)
+                });
 
-        this.saveState();
-        showToast('Twilio connected successfully!', 'success');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (!result.success) {
+                        showToast('Verification Failed: ' + result.error, 'error');
+                        return { success: false, error: result.error };
+                    }
+                    verified = true;
+                }
+            } catch (verifyError) {
+                console.warn('Verify endpoint unavailable, saving without verification:', verifyError.message);
+            }
 
-        const modal = document.getElementById('twilio-config-modal');
-        if (modal) modal.style.display = 'none';
+            this.connected['twilio'] = {
+                connected: true,
+                connectedAt: new Date().toISOString(),
+                config: config
+            };
 
-        if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
+            await this.saveState();
 
-        return { success: true };
+            if (verified) {
+                showToast('✅ Twilio connected & verified!', 'success');
+            } else {
+                showToast('✅ Twilio credentials saved!', 'success');
+            }
+
+            const modal = document.getElementById('twilio-config-modal');
+            if (modal) modal.style.display = 'none';
+
+            if (window.refreshIntegrationsUI) window.refreshIntegrationsUI();
+
+            return { success: true };
+
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('Connection failed: ' + error.message, 'error');
+            return { success: false, error: error.message };
+        }
     },
 
     /**
