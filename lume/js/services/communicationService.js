@@ -216,6 +216,28 @@ const CommunicationService = {
                 console.log('[SMS] ✅ Sent successfully, SID:', result.sid);
                 dbPayload.status = 'sent';
                 dbPayload.sid = result.sid;
+
+                // Check delivery status after 3 seconds
+                setTimeout(async () => {
+                    try {
+                        const statusResp = await fetch('/.netlify/functions/check-sms-status', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                accountSid: twilioConfig.accountSid,
+                                authToken: twilioConfig.authToken,
+                                messageSid: result.sid
+                            })
+                        });
+                        const statusResult = await statusResp.json();
+                        console.log('[SMS] Delivery status:', statusResult.status,
+                            statusResult.errorCode ? `Error ${statusResult.errorCode}: ${statusResult.errorMessage}` : '(no errors)');
+                        if (statusResult.errorCode) {
+                            showToast(`⚠️ SMS delivery issue: Error ${statusResult.errorCode} - ${statusResult.errorMessage}`, 'warning');
+                        }
+                    } catch (e) {
+                        console.warn('[SMS] Could not check delivery status:', e.message);
+                    }
+                }, 3000);
             }
 
             // 4. Insert into Supabase
