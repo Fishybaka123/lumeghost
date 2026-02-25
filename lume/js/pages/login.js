@@ -192,6 +192,12 @@ function renderLoginPage() {
                     </div>
                 </div>
             </div>
+
+            <div class="login-legal-footer" style="text-align: center; padding: 24px 0; width: 100%;">
+                <a href="/privacy-policy" style="color: rgba(255,255,255,0.4); text-decoration: none; font-size: 0.8rem; margin: 0 12px;">Privacy Policy</a>
+                <a href="/terms-and-conditions" style="color: rgba(255,255,255,0.4); text-decoration: none; font-size: 0.8rem; margin: 0 12px;">Terms & Conditions</a>
+                <p style="color: rgba(255,255,255,0.25); font-size: 0.75rem; margin-top: 8px;">&copy; 2026 Lume. All rights reserved.</p>
+            </div>
         </div>
     `;
 }
@@ -307,7 +313,7 @@ function showVerificationSection(email) {
     registerSection.style.display = 'none';
     verifySection.style.display = 'block';
 
-    emailDisplay.textContent = `We sent a 6-digit code to ${email}`;
+    emailDisplay.textContent = `We sent a 6 - digit code to ${email} `;
 
     // Focus on first code input
     setTimeout(() => {
@@ -316,7 +322,7 @@ function showVerificationSection(email) {
 }
 
 function handleCodeInput(index) {
-    const input = document.getElementById(`code-${index}`);
+    const input = document.getElementById(`code - ${index} `);
     const value = input.value;
 
     // Only allow digits
@@ -327,7 +333,7 @@ function handleCodeInput(index) {
 
     // Move to next input
     if (value && index < 6) {
-        document.getElementById(`code-${index + 1}`)?.focus();
+        document.getElementById(`code - ${index + 1} `)?.focus();
     }
 
     // Auto-submit when all 6 digits entered
@@ -342,7 +348,7 @@ function handleCodeInput(index) {
 function handleCodeKeydown(event, index) {
     // Handle backspace - move to previous input
     if (event.key === 'Backspace' && !event.target.value && index > 1) {
-        document.getElementById(`code-${index - 1}`)?.focus();
+        document.getElementById(`code - ${index - 1} `)?.focus();
     }
 
     // Handle paste
@@ -351,7 +357,7 @@ function handleCodeKeydown(event, index) {
         navigator.clipboard.readText().then(text => {
             const digits = text.replace(/\D/g, '').substring(0, 6);
             for (let i = 0; i < digits.length; i++) {
-                const inp = document.getElementById(`code-${i + 1}`);
+                const inp = document.getElementById(`code - ${i + 1} `);
                 if (inp) inp.value = digits[i];
             }
             if (digits.length === 6) {
@@ -364,7 +370,7 @@ function handleCodeKeydown(event, index) {
 function getFullCode() {
     let code = '';
     for (let i = 1; i <= 6; i++) {
-        code += document.getElementById(`code-${i}`)?.value || '';
+        code += document.getElementById(`code - ${i} `)?.value || '';
     }
     return code;
 }
@@ -395,7 +401,7 @@ async function submitVerificationCode() {
         showVerificationError(error.message || 'Invalid code');
         // Clear inputs
         for (let i = 1; i <= 6; i++) {
-            document.getElementById(`code-${i}`).value = '';
+            document.getElementById(`code - ${i} `).value = '';
         }
         document.getElementById('code-1')?.focus();
     } finally {
@@ -448,15 +454,15 @@ function togglePassword(inputId) {
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggle.innerHTML = `
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-            <line x1="1" y1="1" x2="23" y2="23"/>
-        `;
+        < path d = "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+    `;
     } else {
         passwordInput.type = 'password';
         toggle.innerHTML = `
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-        `;
+        < path d = "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+    `;
     }
 }
 
@@ -464,7 +470,7 @@ function showForgotPassword(event) {
     event.preventDefault();
     const email = document.getElementById('login-email').value;
     if (email) {
-        showToast(`Password reset link sent to ${email}`, 'info');
+        showToast(`Password reset link sent to ${email} `, 'info');
     } else {
         showToast('Please enter your email address first', 'warning');
         document.getElementById('login-email').focus();

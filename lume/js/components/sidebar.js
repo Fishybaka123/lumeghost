@@ -81,6 +81,11 @@ function createSidebar(activePage = 'dashboard') {
                     </a>
                 </div>
             </nav>
+
+            <div class="sidebar-legal" style="padding: 16px 20px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.06);">
+                <a href="/privacy-policy" target="_blank" style="color: rgba(255,255,255,0.3); text-decoration: none; font-size: 0.7rem; margin-right: 12px;">Privacy</a>
+                <a href="/terms-and-conditions" target="_blank" style="color: rgba(255,255,255,0.3); text-decoration: none; font-size: 0.7rem;">Terms</a>
+            </div>
         </aside>
     `;
 }
